@@ -1,0 +1,15 @@
+E:\Base\bin\Debug\net9.0\Base.exe
+E:\Base\bin\Debug\net9.0\Base.deps.json
+E:\Base\bin\Debug\net9.0\Base.runtimeconfig.json
+E:\Base\bin\Debug\net9.0\Base.dll
+E:\Base\bin\Debug\net9.0\Base.pdb
+E:\Base\obj\Debug\net9.0\Base.GeneratedMSBuildEditorConfig.editorconfig
+E:\Base\obj\Debug\net9.0\Base.AssemblyInfoInputs.cache
+E:\Base\obj\Debug\net9.0\Base.AssemblyInfo.cs
+E:\Base\obj\Debug\net9.0\Base.csproj.CoreCompileInputs.cache
+E:\Base\obj\Debug\net9.0\Base.sourcelink.json
+E:\Base\obj\Debug\net9.0\Base.dll
+E:\Base\obj\Debug\net9.0\refint\Base.dll
+E:\Base\obj\Debug\net9.0\Base.pdb
+E:\Base\obj\Debug\net9.0\Base.genruntimeconfig.cache
+E:\Base\obj\Debug\net9.0\ref\Base.dll

@@ -13,6 +13,7 @@ Reimplement in C# using more efficient datatypes and processes
 ### Interfaces
 Write custom interfaces and templates to make the network easier to train on varying input-types:
     Images
+    LLM
     Sounds
     Other
 

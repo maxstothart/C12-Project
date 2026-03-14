@@ -219,7 +219,6 @@ namespace Base
             {
                 throw new Exception("Expected EOF, didn't find it.  Maybe the file is corrupted?");
             }
-            Debugger.Break();
             return Output;
 
 

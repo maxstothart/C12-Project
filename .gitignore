@@ -1,3 +1,6 @@
 /System Volume Information/
 $RECYCLE.BIN/
 */.vs/
+*/obj/
+*/bin/
+*/*/bin

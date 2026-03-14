@@ -13,3 +13,7 @@ E:\Base\obj\Debug\net9.0\refint\Base.dll
 E:\Base\obj\Debug\net9.0\Base.pdb
 E:\Base\obj\Debug\net9.0\Base.genruntimeconfig.cache
 E:\Base\obj\Debug\net9.0\ref\Base.dll
+E:\Base\bin\Debug\net9.0\Tools.dll
+E:\Base\bin\Debug\net9.0\Tools.pdb
+E:\Base\obj\Debug\net9.0\Base.csproj.AssemblyReference.cache
+E:\Base\obj\Debug\net9.0\Base.csproj.Up2Date

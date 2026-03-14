@@ -6,12 +6,21 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v9.0": {
-      "Base/1.0.0": {
+      "Vis/1.0.0": {
         "dependencies": {
+          "Base": "1.0.0",
           "Tools": "1.0.0.0"
         },
         "runtime": {
-          "Base.dll": {}
+          "Vis.dll": {}
+        }
+      },
+      "Base/1.0.0": {
+        "runtime": {
+          "Base.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       },
       "Tools/1.0.0.0": {
@@ -25,6 +34,11 @@
     }
   },
   "libraries": {
+    "Vis/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
     "Base/1.0.0": {
       "type": "project",
       "serviceable": false,

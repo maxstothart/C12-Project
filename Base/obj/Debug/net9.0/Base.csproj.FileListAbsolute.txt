@@ -17,3 +17,9 @@ E:\Base\bin\Debug\net9.0\Tools.dll
 E:\Base\bin\Debug\net9.0\Tools.pdb
 E:\Base\obj\Debug\net9.0\Base.csproj.AssemblyReference.cache
 E:\Base\obj\Debug\net9.0\Base.csproj.Up2Date
+E:\Base\bin\Debug\net9.0\NAudio.dll
+E:\Base\bin\Debug\net9.0\NAudio.Asio.dll
+E:\Base\bin\Debug\net9.0\NAudio.Core.dll
+E:\Base\bin\Debug\net9.0\NAudio.Midi.dll
+E:\Base\bin\Debug\net9.0\NAudio.Wasapi.dll
+E:\Base\bin\Debug\net9.0\NAudio.WinMM.dll

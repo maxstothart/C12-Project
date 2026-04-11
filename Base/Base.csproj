@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Tools">
-      <HintPath>D:\source\Tools\bin\Debug\net9.0\Tools.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="D:\C#\Tools\Tools.csproj" />
   </ItemGroup>
 
 </Project>

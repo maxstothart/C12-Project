@@ -22,3 +22,10 @@ E:\Vis\bin\Debug\net9.0-windows\Base.runtimeconfig.json
 E:\Vis\bin\Debug\net9.0-windows\Base.exe
 E:\Vis\bin\Debug\net9.0-windows\Base.dll
 E:\Vis\bin\Debug\net9.0-windows\Base.pdb
+E:\Vis\bin\Debug\net9.0-windows\NAudio.dll
+E:\Vis\bin\Debug\net9.0-windows\NAudio.Asio.dll
+E:\Vis\bin\Debug\net9.0-windows\NAudio.Core.dll
+E:\Vis\bin\Debug\net9.0-windows\NAudio.Midi.dll
+E:\Vis\bin\Debug\net9.0-windows\NAudio.Wasapi.dll
+E:\Vis\bin\Debug\net9.0-windows\NAudio.WinForms.dll
+E:\Vis\bin\Debug\net9.0-windows\NAudio.WinMM.dll

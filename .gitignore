@@ -2,5 +2,5 @@
 $RECYCLE.BIN/
 */.vs/
 */obj/
-*/bin/
-*/*/bin
+**/bin/**
+.fake

@@ -111,12 +111,21 @@ namespace Tools
             }
             return Output;
         }
-        public static String ToString(int[] input, String Seperator = ", ")
+        public static String ToString(bool[] input, String Seperator = ", ")
         {
             String output = "";
-            foreach (Object line in input)
+            foreach (bool line in input)
             {
-                output += line.ToString() + Seperator;
+                output += $"{line}" + Seperator;
+            }
+            return output[0..^Seperator.Length];
+        }
+        public static String ToString<T>(T[] input, String Seperator = ", ") where T : INumber<T>
+        {
+            String output = "";
+            foreach (T line in input)
+            {
+                output += $"{line}" + Seperator;
             }
             return output[0..^Seperator.Length];
         }
@@ -412,7 +421,7 @@ namespace Tools
             foreach (T x in input) { val += x; }
             return val;
         }
-        public static T BulkMult<T>(List<T> input) where T : INumber<T>
+        public static T BulkMult<T>(IEnumerable<T> input) where T : INumber<T>
         {
             T Val = T.One;
             foreach (T x in input) { Val *= x; }
@@ -427,6 +436,18 @@ namespace Tools
                 else { Output.Add(x, 1); }
             }
             return Output;
+        }
+        public static T Clamp<T>(T x, T min, T max) where T : INumber<T>
+        {
+            
+            if (x > max) { return max; }
+            if (x < min) { return min; }
+            return x;
+        }
+        public static bool Bet<T>(T min, T x, T max) where T : INumber<T>
+        {
+            if (x >= min && x <= max) { return true; }
+            return false;
         }
     }
 }

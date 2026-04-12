@@ -26,11 +26,11 @@ namespace Base
             int sel = 0;
             if (sel == 0)
             {
-                Director D = new(Builder.Build(2, 3, 2));
+                Director D = new(Builder.Build(2, 4, 2));
                 D.LoadData(TrainingData.fromFile("E:\\Base\\xor.dat"));
 
-                D.FattenData(0f, 1000);
-                D.TrainEvolutionary(1, 1, 1, 100000, 200, 2f, 3);
+                D.FattenData(0.1f, 1000);
+                D.TrainEvolutionary(100, 10, 10, 200000, 200, 2f, 3);
 
                 D.N.ShowData();
                 //D.TestVerbose(0.2f);
@@ -143,7 +143,7 @@ namespace Base
         }
         public int TrainEvolutionary(int concurrentCount, int ElitePopulation, int Epochs, int maxIT = 10000, int DataDepth = 5, float Deviation = 0.4f, int breadth = 12, float root = 1)
         {
-            (float, Network)[] Best = getBest(new (float, Network)[] { (N.ProcessCost(TD, DataDepth, 2, 2, 3), N) }, concurrentCount);
+            (float, Network)[] Best = getBest(new (float, Network)[] { (ACost(N, TD, DataDepth), N) }, concurrentCount);
             int i = 1;
             for (int Ep = 0; Ep < Epochs; Ep++)
             {
@@ -161,7 +161,8 @@ namespace Base
                     var NewN = Best[i % concurrentCount].Item2.Copy().Mutate(deviation, breadth, 2);
                     NewN.ID = i;
 
-                    var Cost = NewN.ProcessCost(TD, DataDepth, 2, 2, 2);
+                    //var Cost = NewN.ProcessCost(TD, DataDepth, 2, 2, 2);
+                    var Cost = ACost(NewN, TD, DataDepth);
 
                     if (Cost < Best[i % concurrentCount].Item1) { Best[i % concurrentCount] = (Cost, NewN.Copy()); CT.Print($"IT: {Best[i % concurrentCount].Item2.ID} - {Best[i % concurrentCount].Item1} - {deviation}"); }
                     i++;
@@ -170,7 +171,7 @@ namespace Base
                 
             }
             this.N = getBest(Best, 1)[0].Item2;
-            CT.Print($"{i} Iterations, Final Cost: {N.ProcessCost(TD, 200, 2, 2, 3)}");
+            CT.Print($"{i} Iterations, Final Cost: {ACost(N, TD, 200)}");
             return i;
         }
 
@@ -200,6 +201,19 @@ namespace Base
             }
             return output.ToArray();
         }
+        public static float ACost(Network Net, TrainingData TD, int Iterations)
+        {
+            float AC = 0;
+            for (int i = 1; i < Iterations + 1; i++)
+            {
+                var point = TD.getPoint();
+                float PC = OP.BulkAdd(getNodeCost(point[Net.Structure[0]..], Net.Process(point[..Net.Structure[0]]), 10f, 2f));
+                if (PC > (AC / i) * 1.5) { PC *= 1.5f; }
+                AC += PC;
+            }
+            //CT.Print(bounds.Item2 - bounds.Item1);
+            return float.Abs(AC / Iterations);// + 1 * (bounds.Item2 - bounds.Item1);
+        }   
         public static float[] getNodeCost(float[] Expected, float[] Recieved, float MultFactor = 10f, float PFactor = 2)
         {
             float[] output = new float[Expected.Length];
@@ -280,7 +294,7 @@ namespace Base
 
         public static float Sigmoid(float x)
         {
-            return (float)(1 / (1 + Math.Pow(Math.E, -x)));
+            return (float)(1 / (1 - Math.Pow(Math.E, -x)));
         }
 
         public float[] Process(params float[] inputs)

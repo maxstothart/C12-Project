@@ -1,14 +1,13 @@
 # Neural Networks
 
 ### Framework
-Simple python-based framework to create and contain networks of varying size and shape
-Covers both evolutionary, and convolutional neural networks
+Simple(lol) network struct containing import and export functions, as well as an integrated process and cost function.
 
 ### Training
-Train the network using both approaches
+Train the network using both Evolutionary and Convolutionary approaches.
 
 ### Optimization
-Reimplement in C# using more efficient datatypes and processes
+Reimplement some of the functions and loops to increase efficiency
 
 ### Interfaces
 Write custom interfaces and templates to make the network easier to train on varying input-types:

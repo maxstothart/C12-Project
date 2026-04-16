@@ -29,11 +29,11 @@ namespace Base
                 Director D = new(Builder.Build(2, 4, 2));
                 D.LoadData(TrainingData.fromFile("E:\\Base\\xor.dat"));
 
-                D.FattenData(0.1f, 1000);
-                D.TrainEvolutionary(100, 10, 10, 200000, 200, 2f, 3);
+                D.FattenData(0.1f, 300);
+                D.TrainEvolutionary(100, 4, 10, 200000, 200, 2f, 3);
 
                 D.N.ShowData();
-                //D.TestVerbose(0.2f);
+                D.TestVerbose(0.2f);
 
                 //D.N.toFile("E:\\Base\\xor.net");
             }
@@ -43,8 +43,8 @@ namespace Base
                 Director D = new(Builder.Build(2, 3, 2));
                 D.LoadData(TrainingData.fromFile("E:\\Base\\xor.dat"));
                 //D.N.ShowData();
-                //D.N.Process(1, 1);
-                CT.Print(D.N.ProcessCost(D.TD, 20));
+                CT.Print(D.N.ProcessCost(D.TD, new(10000)));
+                CT.Print(Director.ACost(D.N, D.TD, 10000));
                 
                 //D.N.ShowData();
                 //D.FattenData(0.3f, 300);
@@ -141,9 +141,10 @@ namespace Base
             N.Mutate(0.4f, 7, 2).ShowData();
             N.ShowData();
         }
-        public int TrainEvolutionary(int concurrentCount, int ElitePopulation, int Epochs, int maxIT = 10000, int DataDepth = 5, float Deviation = 0.4f, int breadth = 12, float root = 1)
+        public int TrainEvolutionary(int concurrentCount, int ElitePopulation, int Epochs, int maxIT = 10000, int DataDepth = 5, float Deviation = 0.4f, int breadth = 12)
         {
-            (float, Network)[] Best = getBest(new (float, Network)[] { (ACost(N, TD, DataDepth), N) }, concurrentCount);
+            Network.CostParams localCostParams = new(DataDepth);
+            (float, Network)[] Best = getBest(new (float, Network)[] { (N.ProcessCost(TD, localCostParams), N) }, concurrentCount);
             int i = 1;
             for (int Ep = 0; Ep < Epochs; Ep++)
             {
@@ -153,25 +154,17 @@ namespace Base
                 if (Best[0].Item1 == 0) { break; }
                 while (i % float.Floor(maxIT / Epochs) > 0)
                 {
-                    ///Order of Operations
-                    ///Mutate
-                    ///Evaluate
-                    ///Position
-                    
-                    var NewN = Best[i % concurrentCount].Item2.Copy().Mutate(deviation, breadth, 2);
-                    NewN.ID = i;
+                    var NewN = Best[i % concurrentCount].Item2.Copy(i).Mutate(deviation, breadth, 2);
 
-                    //var Cost = NewN.ProcessCost(TD, DataDepth, 2, 2, 2);
-                    var Cost = ACost(NewN, TD, DataDepth);
+                    var Cost = NewN.ProcessCost(TD, localCostParams);
 
                     if (Cost < Best[i % concurrentCount].Item1) { Best[i % concurrentCount] = (Cost, NewN.Copy()); CT.Print($"IT: {Best[i % concurrentCount].Item2.ID} - {Best[i % concurrentCount].Item1} - {deviation}"); }
                     i++;
                 }
                 i++; 
-                
             }
             this.N = getBest(Best, 1)[0].Item2;
-            CT.Print($"{i} Iterations, Final Cost: {ACost(N, TD, 200)}");
+            CT.Print($"{i} Iterations, Final Cost: {N.ProcessCost(TD, localCostParams)}");
             return i;
         }
 
@@ -294,7 +287,7 @@ namespace Base
 
         public static float Sigmoid(float x)
         {
-            return (float)(1 / (1 - Math.Pow(Math.E, -x)));
+            return (float)(1 / (1 + Math.Pow(Math.E, -x)));
         }
 
         public float[] Process(params float[] inputs)
@@ -320,7 +313,17 @@ namespace Base
             }
             return Data[^Recieved.Length..];
         }
-        public float ProcessCost(TrainingData TD, int Iterations, float WeightW = 2, float BiasW = 2, float outW = 3)
+        public struct CostParams(int _Iterations = 200)
+        {
+            public int Iterations = _Iterations;
+            public float WeightW = 2;
+            public float BiasW = 2;
+            public float outW = 3;
+            public float PFactor = 2;
+            public float MultFactor = 10f;
+            public float outlier = 1.5f;
+        }
+        public float ProcessCost(TrainingData TD, CostParams In)
         {
 
             float AC = 0;
@@ -329,32 +332,34 @@ namespace Base
 
             foreach (var W in Weights)
             {
-                WeightCost += float.Pow(1 + float.Abs(W) / 6, WeightW);
+                WeightCost += float.Pow(1 + float.Abs(W) / 6, In.WeightW);
             }
             foreach (var B in Biases)
             {
-                BiasCost += float.Pow(1 + float.Abs(B) / 6, BiasW);
+                BiasCost += float.Pow(1 + float.Abs(B) / 6, In.BiasW);
             }
 
             WeightCost /= Biases.Count;
             BiasCost /= Biases.Count;
-            
 
-            for (int IT = 1; IT < Iterations + 1; IT++)
+            for (int IT = 1; IT < In.Iterations + 1; IT++)
             {
                 var point = TD.getPoint();
-                var inputs = point[..TD.inputs];
-                var Expected = point[TD.inputs..];
-                var Recieved = Process(point[..TD.inputs]);
-                //CT.Print(CT.ToString(Recieved));
-                float PC = 0;
-                for (int i = 0; i < Recieved.Length; i++)
+                var inputs = point[..Structure[0]];
+                var Expected = point[Structure[0]..];
+                var Recieved = Process(inputs);
+                float CurrentCost = 0;
+
+                for (int i = 0; i < Expected.Length; i++)
                 {
-                    PC += float.Pow(float.Abs(Expected[i] - Recieved[i]) * 10, 2);
+                    CurrentCost += float.Pow(float.Abs(Expected[i] - Recieved[i]) * In.MultFactor, In.PFactor);
                 }
-                AC += PC;
+
+                if (CurrentCost > (AC / IT) *In.outlier) { CurrentCost *= 1.5f; }
+                AC += CurrentCost;
             }
-            return AC;// / Iterations; //WeightCost + BiasCost 
+            return float.Abs(AC / In.Iterations) + WeightCost + BiasCost;
+
         }
         public int GetPos(int Layer, int Position)
         {
@@ -523,12 +528,16 @@ namespace Base
         }
         public Network Copy()
         {
+            return Copy(ID);
+        }
+        public Network Copy(int newID)
+        {
             Network output = new();
             output.Structure = Structure.ToList();
             output.Index = Index.ToList();
             output.Weights = Weights.ToList();
             output.Biases = Biases.ToList();
-            output.ID = ID;
+            output.ID = newID;
             return output;
         }
         public Network Mutate(float deviation, int breadth, int WBRatio = 2)
@@ -544,7 +553,6 @@ namespace Base
                 else 
                 {
                     int sel = rand.Next(Weights.Count);
-                    //output.Weights[sel] = OP.Clamp(output.Weights[sel]+(rand.NextSingle() - .5f) * deviation * 2, 0, float.PositiveInfinity);
                     output.Weights[sel] = output.Weights[sel] + (rand.NextSingle() - .5f) * deviation * 2;
                 }
             }

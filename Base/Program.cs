@@ -1,6 +1,21 @@
-﻿using System.Data;
+﻿using NAudio.Dmo;
+using NAudio.MediaFoundation;
+using NAudio.Wave;
+using System.Collections;
+using System.ComponentModel.Design;
+using System.Data;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Swift;
+using System.Runtime.Intrinsics.X86;
+using System.Security.AccessControl;
+using System.Security.Cryptography;
+using System.Xml.Linq;
 using CT = Tools.ConsoleTools;
+using LCSV = Tools.LoadCSVFromFile;
 using OP = Tools.Operations;
+using SORT = Tools.Sort;
 
 namespace Base
 {
@@ -8,38 +23,34 @@ namespace Base
     {
         static void Main(string[] args)
         {
-            if (true)
+            int sel = 0;
+            if (sel == 0)
             {
                 Director D = new(Builder.Build(2, 4, 2));
-                D.LoadData(TrainingData.fromFile("/mnt/e/Base/xor.dat"));
-                //D.LoadData(TrainingData.fromFile("E:\\Base\\xor.dat"));
+                D.LoadData(TrainingData.fromFile("E:\\Base\\xor.dat"));
 
-                D.FattenData(0.3f, 300);
-                D.TrainEvolutionary(100, 6, 30, 1000000, 200, 2f, 3);
+                D.FattenData(0.1f, 300);
+                D.TrainEvolutionary(100, 4, 10, 200000, 200, 2f, 3);
 
                 D.N.ShowData();
-                D.TestVerbose(0.5f);
+                D.TestVerbose(0.2f);
 
                 //D.N.toFile("E:\\Base\\xor.net");
-                D.N.toFile("/mnt/e/Base/xor.net");
             }
-            if (false)
+            if (sel == 1)
             {
-                Director D = new(Network.fromFile("E:\\Base\\xor.net"));
+                //Director D = new(Network.fromFile("E:\\Base\\xor.net"));
+                Director D = new(Builder.Build(2, 3, 2));
                 D.LoadData(TrainingData.fromFile("E:\\Base\\xor.dat"));
-                D.FattenData(0.2f, 300);
-                D.TestVerbose(0.4f);
+                //D.N.ShowData();
+                CT.Print(D.N.ProcessCost(D.TD, new(10000)));
+                CT.Print(Director.ACost(D.N, D.TD, 10000));
+                
+                //D.N.ShowData();
+                //D.FattenData(0.3f, 300);
+                //D.TestVerbose(0.3f);
             }
-            if (false)
-            {
-                Network N = Network.fromFile("E:\\Base\\xor.net");
-                N = Builder.Build(2, 4, 2);
-                TrainingData TD = TrainingData.fromFile("E:\\Base\\xor.dat");
-                TD.PermutateFill(0.1f, 300);
-                float[] point = TD.getPoint();
-                CT.Print(N.Process(point[..2]));
-                CT.Print(point[2..]);
-            }
+
         }
     }
     public static class Builder
@@ -124,17 +135,16 @@ namespace Base
         {
             TD.PermutateFill(deviation, count);
         }
-        public int TrainEvolutionary(int concurrentCount, int ElitePopulation, int Epochs, int maxIT = 10000, int DataDepth = 5, float Deviation = 0.4f, int breadth = 12, float root = 1)
+        public void Train()
         {
-            Network.PCParams Par = new();
             
-            Par.WeightW = 1;
-            Par.BiasW = 1;
-            Par.outW = 5;
-            Par.MultFactor = 10f;
-            Par.PFactor = 2f;
-
-        (float, Network)[] Best = getBest(new (float, Network)[] { (N.ProcessCost(TD, DataDepth, Par), N) }, concurrentCount);
+            N.Mutate(0.4f, 7, 2).ShowData();
+            N.ShowData();
+        }
+        public int TrainEvolutionary(int concurrentCount, int ElitePopulation, int Epochs, int maxIT = 10000, int DataDepth = 5, float Deviation = 0.4f, int breadth = 12)
+        {
+            Network.CostParams localCostParams = new(DataDepth);
+            (float, Network)[] Best = getBest(new (float, Network)[] { (N.ProcessCost(TD, localCostParams), N) }, concurrentCount);
             int i = 1;
             for (int Ep = 0; Ep < Epochs; Ep++)
             {
@@ -145,16 +155,19 @@ namespace Base
                 while (i % float.Floor(maxIT / Epochs) > 0)
                 {
                     var NewN = Best[i % concurrentCount].Item2.Copy(i).Mutate(deviation, breadth, 2);
-                    var Cost = NewN.ProcessCost(TD, DataDepth, Par);
+
+                    var Cost = NewN.ProcessCost(TD, localCostParams);
+
                     if (Cost < Best[i % concurrentCount].Item1) { Best[i % concurrentCount] = (Cost, NewN.Copy()); CT.Print($"IT: {Best[i % concurrentCount].Item2.ID} - {Best[i % concurrentCount].Item1} - {deviation}"); }
                     i++;
                 }
-                i++;
+                i++; 
             }
             this.N = getBest(Best, 1)[0].Item2;
-            CT.Print($"{i} Iterations, Final Cost: {N.ProcessCost(TD, 200, Par)}");
+            CT.Print($"{i} Iterations, Final Cost: {N.ProcessCost(TD, localCostParams)}");
             return i;
         }
+
         public static (float, Network)[] getBest((float, Network)[] input, int length, int subset=1)
         {
             (float, int)[] LowestCost = new (float, int)[subset];
@@ -181,34 +194,53 @@ namespace Base
             }
             return output.ToArray();
         }
-        public (bool, List<(float[], float[], float[], bool)>) Test(float passAccuracy = 0.001f)
+        public static float ACost(Network Net, TrainingData TD, int Iterations)
         {
-            List<(float[], float[], float[], bool)> Output = new();
+            float AC = 0;
+            for (int i = 1; i < Iterations + 1; i++)
+            {
+                var point = TD.getPoint();
+                float PC = OP.BulkAdd(getNodeCost(point[Net.Structure[0]..], Net.Process(point[..Net.Structure[0]]), 10f, 2f));
+                if (PC > (AC / i) * 1.5) { PC *= 1.5f; }
+                AC += PC;
+            }
+            //CT.Print(bounds.Item2 - bounds.Item1);
+            return float.Abs(AC / Iterations);// + 1 * (bounds.Item2 - bounds.Item1);
+        }   
+        public static float[] getNodeCost(float[] Expected, float[] Recieved, float MultFactor = 10f, float PFactor = 2)
+        {
+            float[] output = new float[Expected.Length];
+            for (int i = 0; i < Expected.Length; i++)
+            {
+                output[i] = float.Pow(float.Abs(Expected[i] - Recieved[i]) * MultFactor, PFactor);
+            }
+            return output;
+        }
+        public (bool, List<(float[], float[], bool[], bool)>) Test(float passAccuracy = 0.001f)
+        {
+            List<(float[], float[], bool[], bool)> Output = new();
             bool NPassed = true;
             foreach (var line in TD.Data)
             {
                 float[] Expected = line[TD.inputs..];
                 float[] Recieved = N.Process(line[..TD.inputs]);
-                float[] Distance = new float[Expected.Length];
                 bool TPassed = true;
+                var Passed = new bool[Expected.Length];
 
                 for (int i = 0; i < Expected.Length; i++)
                 {
-                    float DistanceFromExpected = float.Abs(Expected[i] - Recieved[i]);
-                    Distance[i] = DistanceFromExpected - passAccuracy;
-                    
-                    if (!(DistanceFromExpected <= passAccuracy)) { TPassed = false; NPassed = false; }
-                    //CT.Print($"{Expected[i]}, {Recieved[i]}, {DistanceFromExpected}, {Distance[i]}"); 
-                    
+                    Passed[i] = float.Abs(Expected[i] - Recieved[i]) <= passAccuracy;
+                    if (!Passed[i]) { TPassed = false; NPassed = false; }
                 }
-                if (!TPassed) { Output.Add((line, Recieved, Distance, TPassed)); }
+                if (!TPassed) { Output.Add((line, Recieved, Passed.ToArray(), TPassed));  }
+                
             }
             return (NPassed, Output);
         }
         public void TestVerbose(float passAccuracy = 0.001f)
         {
             var Test = this.Test(passAccuracy);
-            CT.Print(Test.Item2.Select(a => $"{a.Item4} - ({CT.ToString(CT.toNSD(a.Item1, 2))}), ({CT.ToString(CT.toNSD(a.Item2, 2))}), ({CT.ToString(CT.toNSD(a.Item3, 2))})").ToArray(), null, "Results: ", 5);
+            CT.Print(Test.Item2.Select(a => $"{a.Item4} - ({CT.ToString(a.Item1)}), ({CT.ToString(a.Item2)}), ({CT.ToString(a.Item3)})").ToArray(), null, "Results: ", 5);
             CT.Print(Test.Item1);
         }
     }
@@ -260,81 +292,112 @@ namespace Base
 
         public float[] Process(params float[] inputs)
         {
+            var Recieved = new float[inputs.Length];
+            int CurrIndex = Structure[0];
             var Data = inputs.Concat(new float[Biases.Count - inputs.Length]).ToArray();
-            int currIndex = inputs.Length;
-            int POffset = 0;
-            int COffset = inputs.Length;
 
+            int offset = 0;
+            int currIndex = Structure[0];
             for (int Layer = 1; Layer < Structure.Count; Layer++)
             {
-                for (int NodeInLayer = 0; NodeInLayer < Structure[Layer]; NodeInLayer++)
+                for (int CurrLayerNode = 0; CurrLayerNode < Structure[Layer]; CurrLayerNode++)
                 {
-                    for (int NodeInPrevLayer = 0; NodeInPrevLayer < Structure[Layer-1]; NodeInPrevLayer++)
+                    for (int PrevLayerNode = 0; PrevLayerNode < Structure[Layer - 1]; PrevLayerNode++)
                     {
-                        Data[COffset + NodeInLayer] += Data[POffset + NodeInPrevLayer] * Weights[currIndex];
+                        Data[offset + Structure[Layer - 1] + CurrLayerNode] += Data[offset + PrevLayerNode] * Weights[CurrIndex];
                         currIndex++;
                     }
-                    Data[COffset + NodeInLayer] = ATO(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]);
+                    Data[offset + Structure[Layer - 1] + CurrLayerNode] = ATO(Data[offset + Structure[Layer - 1] + CurrLayerNode] + Biases[offset + Structure[Layer - 1] + CurrLayerNode]);
                 }
-                POffset = COffset;
-                COffset += Structure[Layer];
+                offset += Structure[Layer - 1];
             }
-            return Data[^Structure[^1]..];
+            return Data[^Recieved.Length..];
         }
-        public struct PCParams()
+        public struct CostParams(int _Iterations = 200)
         {
+            public int Iterations = _Iterations;
             public float WeightW = 2;
             public float BiasW = 2;
             public float outW = 3;
+            public float PFactor = 2;
             public float MultFactor = 10f;
-            public float PFactor = 2f;
+            public float outlier = 1.5f;
         }
-        public float ProcessCost(TrainingData TD, int Iterations, PCParams P)
+        public float ProcessCost(TrainingData TD, CostParams In)
         {
-            float BCost = 0;
-            float WCost = 0;
-            float OCost = 0;
 
-            foreach (float B in Biases) { BCost += float.Pow(float.Abs(B), 2); }
-            foreach (float W in Weights) { WCost += float.Pow(float.Abs(W), 2); }
-            for (int it = 1; it < Iterations + 1; it++)
+            float AC = 0;
+            float WeightCost = 0;
+            float BiasCost = 0;
+
+            foreach (var W in Weights)
+            {
+                WeightCost += float.Pow(1 + float.Abs(W) / 6, In.WeightW);
+            }
+            foreach (var B in Biases)
+            {
+                BiasCost += float.Pow(1 + float.Abs(B) / 6, In.BiasW);
+            }
+
+            WeightCost /= Biases.Count;
+            BiasCost /= Biases.Count;
+
+            for (int IT = 1; IT < In.Iterations + 1; IT++)
             {
                 var point = TD.getPoint();
-                var inputs = point[..TD.inputs];
-                var Expected = point[TD.inputs..];
+                var inputs = point[..Structure[0]];
+                var Expected = point[Structure[0]..];
                 var Recieved = Process(inputs);
+                float CurrentCost = 0;
 
-                float PC = 0;
                 for (int i = 0; i < Expected.Length; i++)
                 {
-                    PC += float.Pow(float.Abs(Expected[i] - Recieved[i]) * P.MultFactor, P.PFactor);
+                    CurrentCost += float.Pow(float.Abs(Expected[i] - Recieved[i]) * In.MultFactor, In.PFactor);
                 }
-                if (PC > (OCost / it) * 1.5) { PC *= 1.5f; }
-                OCost += PC;
+
+                if (CurrentCost > (AC / IT) *In.outlier) { CurrentCost *= 1.5f; }
+                AC += CurrentCost;
             }
+            return float.Abs(AC / In.Iterations) + WeightCost + BiasCost;
 
-            BCost /= Biases.Count;
-            WCost /= Weights.Count;
-            OCost /= Iterations;
-            
-            BCost *= P.BiasW;
-            WCost *= P.WeightW;
-            OCost *= P.outW;
-
-            if (OCost == 0) { return 0; }
-
-            return OCost + (BCost + WCost);
         }
-
-        public (int, int) GetPos(int NodeID)
+        public int GetPos(int Layer, int Position)
         {
-            int layer = 0;
-            while (OP.BulkAdd(Structure[..layer]) - 1 < NodeID)
+            int output = Structure[0];
+            for (int SLayer = 1; SLayer < Structure.Count; SLayer++)
             {
-                layer += 1;
+                for (int Node = 0; Node < Structure[SLayer]; Node++)
+                {
+                    if (SLayer == Layer && Node == Position) { return output; }
+                    output += Structure[SLayer - 1];
+                }
             }
-            return (layer, NodeID - OP.BulkAdd(Structure[..layer]));
+            return output;
         }
+        //Retired
+        public void Sort()
+        {
+            List<int> newIndex = new();
+            List<float> newWeights = new();
+
+            for (int i = 0; i < Index.Count; i++)
+            {
+                if (i == 0 || (Index[i] != Index[i - 1] && newIndex.Contains(Index[i])))
+                {
+                    for (int j = 0; j < Index.Count; j++)
+                    {
+                        if (Index[j] == Index[i])
+                        {
+                            newIndex.Add(Index[j]);
+                            newWeights.Add(Weights[j]);
+                        }
+                    }
+                }
+            }
+            Index = newIndex;
+            Weights = newWeights;
+        }
+
         public void ShowData()
         {
             CT.Print(Weights.ToArray(), Index.ToArray(), $"Weights - {Weights.Count}");
@@ -463,6 +526,10 @@ namespace Base
 
 
         }
+        public Network Copy()
+        {
+            return Copy(ID);
+        }
         public Network Copy(int newID)
         {
             Network output = new();
@@ -473,7 +540,6 @@ namespace Base
             output.ID = newID;
             return output;
         }
-        public Network Copy() { return Copy(ID); }
         public Network Mutate(float deviation, int breadth, int WBRatio = 2)
         {
             Network output = Copy();
@@ -487,7 +553,6 @@ namespace Base
                 else 
                 {
                     int sel = rand.Next(Weights.Count);
-                    //output.Weights[sel] = OP.Clamp(output.Weights[sel]+(rand.NextSingle() - .5f) * deviation * 2, 0, float.PositiveInfinity);
                     output.Weights[sel] = output.Weights[sel] + (rand.NextSingle() - .5f) * deviation * 2;
                 }
             }

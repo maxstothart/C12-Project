@@ -89,8 +89,6 @@ namespace Tools
         }
 
 
-
-
         public static String ToString(params Object[] input) { return ToString(input, ", "); }
         public static String ToString(Object[] input, String Seperator)
         {
@@ -134,6 +132,35 @@ namespace Tools
 
         public static void EmptyLine(int n = 1) { for (int i = 0; i < n; i++) { Console.WriteLine(""); } }
         public static void TestPrint2() { Console.WriteLine("TEST"); }
+        public static string toNSD<T>(T input, int toDigit) where T : INumber<T>
+        {
+            string Sign = ((input < T.Zero) ? "-" : "");
+            string[] IAsStr = T.Abs(input).ToString().Split(".");
+            if (IAsStr == null ) { return "0"; }
+            if (IAsStr.Length == 1) { return Sign+IAsStr[0]; }
+            if (IAsStr[1].Length == 0) { return Sign+IAsStr[0]; }
+            for (int i = 0; i < IAsStr.Length; i++)
+            {
+                if (IAsStr[1][i] != '0' && IAsStr[1][i] != '.')
+                {
+                    if (i+toDigit >= IAsStr[1].Length)
+                    {
+                        return Sign + IAsStr[0]+IAsStr[1];
+                    }
+                    return Sign + IAsStr[0] + "." + IAsStr[1][..(i + toDigit)];
+                }
+            }
+            return "0";
+        }
+        public static string[] toNSD<T>(IEnumerable<T> input, int toDigit) where T : INumber<T>
+        {
+            string[] output = new string[input.Count()];
+            for (int i = 0; i < input.Count(); i++)
+            {
+                output[i] = toNSD<T>(input.ElementAt(i), toDigit);
+            }
+            return output;
+        }
     }
     public class LoadCSVFromFile
     {

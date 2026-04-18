@@ -1,0 +1,107 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CT = Tools.ConsoleTools;
+using OP = Tools.Operations;
+
+namespace Base
+{
+    public struct TrainingData
+    {
+        private Random Rand = new();
+        public int inputs;
+        public int outputs;
+        public List<float[]> Data = new();
+        public int DataCount = 0;
+        public TrainingData() { }
+        public TrainingData(int _inputs, int _outputs)
+        {
+            inputs = _inputs;
+            outputs = _outputs;
+        }
+        public void showData()
+        {
+            var output = new String[Data.Count];
+            for (int i = 0; i < output.Length; i++)
+            {
+                foreach (float F in Data[i])
+                {
+                    output[i] += $"{F}, ";
+                }
+                output[i] = output[i][..^2];
+            }
+            CT.Print(output);
+        }
+        public float[] getPoint()
+        {
+            return Data[Rand.Next(Data.Count - 1)];
+        }
+        public void toFile(String fname)
+        {
+            BinaryWriter BW = new(new FileStream(fname, FileMode.Create));
+
+            BW.Write((int)inputs);
+            BW.Write((int)outputs);
+
+            foreach (float[] line in Data)
+            {
+                foreach (float Val in line)
+                {
+                    BW.Write(Val);
+                }
+            }
+            BW.Flush();
+            BW.Close();
+        }
+        public static TrainingData fromFile(String fname)
+        {
+            TrainingData Output = new();
+            BinaryReader BR = new(new FileStream(fname, FileMode.Open));
+            Output.inputs = BR.ReadInt32();
+            Output.outputs = BR.ReadInt32();
+            while (BR.BaseStream.Position < BR.BaseStream.Length)
+            {
+                var Entry = new float[Output.outputs + Output.inputs];
+                for (int i = 0; i < Entry.Length; i++)
+                {
+                    Entry[i] = BR.ReadSingle();
+                }
+                Output.Data.Add(Entry);
+            }
+            BR.Close();
+            return Output;
+        }
+        public List<float[]> getOrigData()
+        {
+            return Data[..DataCount];
+        }
+        public void revertToOriginal()
+        {
+            Data = Data[..DataCount];
+        }
+        public void refreshData(float Deviation, int count = 5)
+        {
+            if (DataCount != Data.Count && DataCount != 0) { revertToOriginal(); }
+            PermutateFill(Deviation, count);
+        }
+        public void PermutateFill(float Deviation, int count = 5)
+        {
+            DataCount = Data.Count;
+            for (int i = 0; i < count; i++)
+            {
+                for (int k = 0; k < DataCount; k++)
+                {
+                    float[] val = Data[Rand.Next(DataCount)].ToArray();
+                    for (int j = 0; j < inputs; j++)
+                    {
+                        val[j] = OP.Clamp((val[j] + (Rand.NextSingle() - 0.5f) * Deviation * 2), 0, float.PositiveInfinity);
+                    }
+                    Data.Add(val);
+                }
+            }
+
+        }
+    }
+}

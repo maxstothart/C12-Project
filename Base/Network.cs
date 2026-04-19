@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CT = Tools.ConsoleTools;
+﻿using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
 
 namespace Base
@@ -15,13 +10,23 @@ namespace Base
         public List<int> Structure = new();
         public List<float> Weights = new();
         public List<float> Biases = new();
-        public Func<float, float> ATO = a => Sigmoid(a);
+        public Func<float, float> ATO = a => ReLU(a);// Sigmoid(a);// ReLU(a);
+        public Func<float, float> OutputATO = a => Sigmoid(a);
         public int ID = 0;
-        public void Add(int Layer, float[] NewWeights, float Bias)
+        public void Add(int Layer, float[]? NewWeights=null, float Bias=0)
         {
             int NodeID = OP.BulkAdd(Structure[..Layer]) + Structure[Layer];
             int IndexKey = Index.IndexOf(NodeID);
             if (IndexKey == -1) { IndexKey = Index.Count; }
+
+            if (NewWeights == null)
+            {
+                NewWeights = new float[Structure[Layer - 1]];
+                for (int i = 0; i < NewWeights.Length; i++)
+                {
+                    NewWeights[i] = 1;
+                }
+            }
 
             for (int i = 0; i < NewWeights.Length; i++)
             {
@@ -53,6 +58,14 @@ namespace Base
         {
             return (float)(1 / (1 + Math.Pow(Math.E, -x)));
         }
+        public static float HyperbolicTan(float x)
+        {
+            return float.Tanh(x);
+        }
+        public static float ReLU(float x)
+        {
+            return (x > 0) ? x : 0;
+        }
 
         public float[] Process(params float[] inputs)
         {
@@ -70,7 +83,9 @@ namespace Base
                         Data[COffset + NodeInLayer] += Data[POffset + NodeInPrevLayer] * Weights[currIndex];
                         currIndex++;
                     }
-                    Data[COffset + NodeInLayer] = ATO(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]);
+                    if (Layer+1 == Structure.Count) { Data[COffset + NodeInLayer] = Sigmoid(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]); }
+                    else { Data[COffset + NodeInLayer] = OutputATO(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]); }
+                        
                 }
                 POffset = COffset;
                 COffset += Structure[Layer];
@@ -106,13 +121,13 @@ namespace Base
                 {
                     PC += float.Pow(float.Abs(Expected[i] - Recieved[i]) * P.MultFactor, P.PFactor);
                 }
-                if (PC > (OCost / it) * 1.5) { PC *= 1.5f; }
+                //if (PC > (OCost / it) * 1.5) { PC *= 1.5f; }
                 OCost += PC;
             }
 
             BCost /= Biases.Count;
             WCost /= Weights.Count;
-            OCost /= Iterations;
+            //OCost /= Iterations;
 
             BCost *= P.BiasW;
             WCost *= P.WeightW;

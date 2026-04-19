@@ -22,7 +22,7 @@ class Program
             Application.EnableVisualStyles();
 
             // This starts the UI loop and opens the window
-            Application.Run(new ShowNetwork(Network.fromFile("E:\\Vis\\Data\\Network.dat")));
+            Application.Run(new ShowNetwork(Network.fromFile("E:\\Base\\xor.net"), 800, 800));
         }
     }
     public class VisualiserForm : Form
@@ -73,12 +73,7 @@ class Program
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            //showWindowSize(e, (.1f,.1f));
-            //drawLayer(e, Brushes.Green, 2, .3f, .2f, 0.05f);
-            //drawLayer(e, Brushes.Green, 4, .5f, .2f, 0.05f);
-            //drawLayer(e, Brushes.Green, 3, .7f, .2f, 0.05f);
-            List<int> structure = new List<int> { 2,4,3};
-            drawNetwork(e, structure, (.1f, .3f), (0f, .8f), 0.005f);
+            drawNetwork(e, N.Structure, (.1f, .3f), (0f, .8f), 0.005f);
         }
 
         public static void drawNode(PaintEventArgs e, Brush color, float xAsDecimal, float yAsDecimal, float DotSize)

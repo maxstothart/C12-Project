@@ -1,10 +1,4 @@
-﻿using NAudio.CoreAudioApi;
-using System.Data;
-using System.Diagnostics;
-using CT = Tools.ConsoleTools;
-using OP = Tools.Operations;
-
-namespace Base
+﻿namespace Base
 {
     internal class Program
     {
@@ -14,8 +8,13 @@ namespace Base
             DataDir = "E:\\Base\\";
 
 
-
             if (true)
+            {
+                GPUSupport.listDevices();
+            }
+
+
+            if (false)
             {
                 Director D = new(Builder.Build(2, 3, 4, 2));
                 D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
@@ -26,28 +25,28 @@ namespace Base
                     threads: 20,
                     ElitePopulation: 10,
                     EpochsPerMillion: 16,
-                    accuracy: -10,
-                    DataDepth: 300,
-                    maxIT: 4000000,
+                    accuracy: -30,
+                    DataDepth: 811,
+                    maxIT: 2000000,
                     Deviation: 3f,
                     breadth: 7,
                     Par: new()
                     {
                         WeightW = 1,
                         BiasW = 1,
-                        outW = 3,
-                        MultFactor = 10f,
-                        PFactor = 3f,
+                        outW = 5,
+                        MultFactor = 100f,
+                        PFactor = 5f,
                         WBCutOff = 0.01f
                     },
                     Verbose: true,
-                    shock: true
+                    shock: false
                 );
                 D.N.ShowData();
-                D.TestVerbose(0.2f);
+                D.TestVerbose(0.1f);
                 D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
-                D.FattenData(0.3f, 1000);
-                D.TestVerbose(0.3f);
+                D.FattenData(0.3f, 10000);
+                D.TestVerbose(0.1f);
 
                 D.N.toFile(DataDir + "xor.net");
             }

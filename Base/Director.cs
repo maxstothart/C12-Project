@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
 
@@ -43,11 +37,12 @@ namespace Base
                 float deviation = float.Pow(Deviation, OP.Clamp(float.Log10(Best[0].Item1), -1f, 2));
 
 
-                if (i - 200000 > OldID && shock)
+                if (i - 100000 > OldID && shock)
                 {
                     for (int B = 4; B < Best.Length; B++)
                     {
-                        Best[B].Item2.Mutate(deviation*2, breadth, 2);
+                        //Best[B].Item2.Add(Rand.Next(Best[B].Item2.Structure.Count-2)+1);
+                        Best[B].Item2.Mutate(Deviation*2, breadth*2, 2);
                         Best[B].Item1 = Best[B].Item2.ProcessCost(TD, DataDepth, Par);
                     }
                 }

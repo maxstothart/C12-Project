@@ -454,7 +454,7 @@ namespace Tools
             foreach (T x in input) { Val *= x; }
             return Val;
         }
-        public static Dictionary<T, int> CountAppearances<T>(List<T> input) where T : notnull
+        public static Dictionary<T, int> CountAppearances<T>(IEnumerable<T> input) where T : notnull
         {
             Dictionary<T, int> Output = new();
             foreach (T x in input)
@@ -475,6 +475,22 @@ namespace Tools
         {
             if (x >= min && x <= max) { return true; }
             return false;
+        }
+        public static T[] Insert<T>(this T[] oldArray, int index, T[] newArray) where T : struct
+        {
+            T[] result = new T[oldArray.Length + newArray.Length];
+            Array.Copy(oldArray, 0, result, 0, index);
+            Array.Copy(newArray, 0, result, index, newArray.Length);
+            Array.Copy(oldArray, index, result, index + newArray.Length, oldArray.Length - index);
+            return result;
+        }
+        public static T[] Insert<T>(this T[] OldArray, int Index, T New) where T : struct
+        {
+            return Insert<T>(OldArray, Index, new T[] { New });
+        }
+        public static T[] Add<T>(this T[] OldArray, T New) where T : struct
+        {
+            return OldArray.Concat(new T[] { New }).ToArray();
         }
     }
 }

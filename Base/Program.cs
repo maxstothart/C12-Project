@@ -8,13 +8,15 @@
             DataDir = "E:\\Base\\";
 
 
-            if (true)
+            if (false)
             {
-                GPUSupport.listDevices();
+                //GPUSupport.listDevices();
+                GPUSupport.printResults(GPUSupport.GPUTest(9), "GPU Times");
+                GPUSupport.printResults(GPUSupport.CPUTest(9, 10), "CPU Times");
             }
 
 
-            if (false)
+            if (true)
             {
                 Director D = new(Builder.Build(2, 3, 4, 2));
                 D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));

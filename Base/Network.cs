@@ -1,23 +1,25 @@
 ﻿using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
-
+using Tools;
 namespace Base
 {
     public struct Network()
     {
         private Random rand = new();
-        public List<int> Index = new();
-        public List<int> Structure = new();
-        public List<float> Weights = new();
-        public List<float> Biases = new();
+
+        public int[] Index;
+        public int[] Structure;
+        public float[] Weights;
+        public float[] Biases;
+
         public Func<float, float> ATO = a => ReLU(a);// Sigmoid(a);// ReLU(a);
         public Func<float, float> OutputATO = a => Sigmoid(a);
         public int ID = 0;
         public void Add(int Layer, float[]? NewWeights=null, float Bias=0)
         {
             int NodeID = OP.BulkAdd(Structure[..Layer]) + Structure[Layer];
-            int IndexKey = Index.IndexOf(NodeID);
-            if (IndexKey == -1) { IndexKey = Index.Count; }
+            int IndexKey = Array.IndexOf(Index, NodeID);
+            if (IndexKey == -1) { IndexKey = Index.Length; }
 
             if (NewWeights == null)
             {
@@ -28,22 +30,28 @@ namespace Base
                 }
             }
 
+            int[] NIndex = new int[NewWeights.Length];
             for (int i = 0; i < NewWeights.Length; i++)
             {
-                Index.Insert(IndexKey + i, NodeID);
-                Weights.Insert(IndexKey + i, NewWeights[i]);
+                NIndex[i] = NodeID;
             }
-            Biases.Insert(NodeID, Bias);
+            Index = OP.Insert(Index, IndexKey, NIndex).ToArray();
+            Weights = OP.Insert(Weights, IndexKey, NewWeights).ToArray();
+            Biases = OP.Insert(Biases, NodeID, Bias);
+
+            //Index = Index[..IndexKey].Concat(NIndex.Concat(Index[IndexKey..])).ToArray();
+            //Weights = Weights[..IndexKey].Concat(NewWeights.Concat(Weights[IndexKey..])).ToArray();
+            //Biases = Biases[..NodeID].Concat(new float[] { Bias }.Concat(Biases[NodeID..])).ToArray();
 
             // Advance Forward values
-            for (int i = IndexKey + NewWeights.Length; i < Index.Count; i++)
+            for (int i = IndexKey + NewWeights.Length; i < Index.Length; i++)
             {
                 Index[i] += 1;
             }
 
             Structure[Layer] += 1;
             //Fill Forward Weights
-            if (Layer + 1 < Structure.Count)
+            if (Layer + 1 < Structure.Length)
             {
                 for (int i = 1; i < Structure[Layer + 1] + 1; i++)
                 {
@@ -69,12 +77,12 @@ namespace Base
 
         public float[] Process(params float[] inputs)
         {
-            var Data = inputs.Concat(new float[Biases.Count - inputs.Length]).ToArray();
+            var Data = inputs.Concat(new float[Biases.Length - inputs.Length]).ToArray();
             int currIndex = inputs.Length;
             int POffset = 0;
             int COffset = inputs.Length;
 
-            for (int Layer = 1; Layer < Structure.Count; Layer++)
+            for (int Layer = 1; Layer < Structure.Length; Layer++)
             {
                 for (int NodeInLayer = 0; NodeInLayer < Structure[Layer]; NodeInLayer++)
                 {
@@ -83,7 +91,7 @@ namespace Base
                         Data[COffset + NodeInLayer] += Data[POffset + NodeInPrevLayer] * Weights[currIndex];
                         currIndex++;
                     }
-                    if (Layer+1 == Structure.Count) { Data[COffset + NodeInLayer] = Sigmoid(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]); }
+                    if (Layer+1 == Structure.Length) { Data[COffset + NodeInLayer] = Sigmoid(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]); }
                     else { Data[COffset + NodeInLayer] = OutputATO(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]); }
                         
                 }
@@ -125,8 +133,8 @@ namespace Base
                 OCost += PC;
             }
 
-            BCost /= Biases.Count;
-            WCost /= Weights.Count;
+            BCost /= Biases.Length;
+            WCost /= Weights.Length;
             //OCost /= Iterations;
 
             BCost *= P.BiasW;
@@ -149,8 +157,8 @@ namespace Base
         }
         public void ShowData()
         {
-            CT.Print(Weights.ToArray(), Index.ToArray(), $"Weights - {Weights.Count}");
-            CT.Print(Biases.ToArray(), null, $"Biases - {Biases.Count}");
+            CT.Print(Weights.ToArray(), Index.ToArray(), $"Weights - {Weights.Length}");
+            CT.Print(Biases.ToArray(), null, $"Biases - {Biases.Length}");
         }
         public List<int> EstimateStructure()
         {
@@ -189,17 +197,17 @@ namespace Base
 
             BinaryWriter BW = new(new FileStream(fname, FileMode.Create));
 
-            BW.Write((char)'S'); BW.Write((int)Structure.Count);
-            BW.Write((char)'I'); BW.Write((int)Biases.Count);
-            BW.Write((char)'B'); BW.Write((int)Biases.Count);
-            BW.Write((char)'W'); BW.Write((int)Weights.Count);
+            BW.Write((char)'S'); BW.Write((int)Structure.Length);
+            BW.Write((char)'I'); BW.Write((int)Biases.Length);
+            BW.Write((char)'B'); BW.Write((int)Biases.Length);
+            BW.Write((char)'W'); BW.Write((int)Weights.Length);
 
             foreach (int s in Structure) { BW.Write((int)s); }
 
             int start = 0, end = 0;
-            for (int i = 0; i < Biases.Count; i++)
+            for (int i = 0; i < Biases.Length; i++)
             {
-                while (end < Index.Count && start < Index.Count && Index[start] == Index[end]) { end += 1; }
+                while (end < Index.Length && start < Index.Length && Index[start] == Index[end]) { end += 1; }
                 BW.Write((int)end - start);
                 start = end;
             }
@@ -278,10 +286,10 @@ namespace Base
         public Network Copy(int newID)
         {
             Network output = new();
-            output.Structure = Structure.ToList();
-            output.Index = Index.ToList();
-            output.Weights = Weights.ToList();
-            output.Biases = Biases.ToList();
+            output.Structure = (int[])Structure.Clone();
+            output.Index = (int[])Index.Clone();
+            output.Weights = (float[])Weights.Clone();
+            output.Biases = (float[])Biases.Clone();
             output.ID = newID;
             return output;
         }
@@ -293,12 +301,12 @@ namespace Base
             {
                 if (WBRatio >= 1 && rand.Next(WBRatio + 1) == WBRatio)
                 {
-                    int sel = rand.Next(Biases.Count);
+                    int sel = rand.Next(Biases.Length);
                     output.Biases[sel] = output.Biases[sel] + ((rand.NextSingle() - .5f) * deviation * 2);
                 }
                 else
                 {
-                    int sel = rand.Next(Weights.Count);
+                    int sel = rand.Next(Weights.Length);
                     //output.Weights[sel] = OP.Clamp(output.Weights[sel]+(rand.NextSingle() - .5f) * deviation * 2, 0, float.PositiveInfinity);
                     output.Weights[sel] = output.Weights[sel] + (rand.NextSingle() - .5f) * deviation * 2;
                 }
@@ -350,28 +358,34 @@ namespace Base
             }
 
             Network Data = new();
-            Data.Structure = Structure;
+            List<int> Index = new();
+            List<float> Weights = new();
+            List<float> Biases = new();
+            Data.Structure = Structure.ToArray();
 
             foreach (Layer L in Layers)
             {
                 foreach (Node N in L.Nodes)
                 {
-                    Data.Biases.Add(N.Bias);
+                    Biases.Add(N.Bias);
                     if (N.inputs == null)
                     {
-                        Data.Index.Add(N.NodeID);
-                        Data.Weights.Add(1f);
+                        Index.Add(N.NodeID);
+                        Weights.Add(1f);
                     }
                     else
                     {
                         foreach (var w in N.inputs)
                         {
-                            Data.Index.Add(N.NodeID);
-                            Data.Weights.Add(w.Item2);
+                            Index.Add(N.NodeID);
+                            Weights.Add(w.Item2);
                         }
                     }
                 }
             }
+            Data.Index = Index.ToArray();
+            Data.Weights = Weights.ToArray();
+            Data.Biases = Biases.ToArray();
             return Data;
         }
     }

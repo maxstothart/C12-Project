@@ -7,30 +7,31 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Serialization.Formatters;
 using System.Text;
 using System.Threading.Tasks;
+using Tools;
 
 namespace Base
 {
     public static class GPUSupport
     {
-        public static void GPU()
+        public static List<TimeSpan> GPUTest(int ArraySize)
         {
+            List<TimeSpan> Points = new();
             var timer = Stopwatch.StartNew();
 
             // Initialize ILGPU.
             Context context = Context.CreateDefault();
             Accelerator accelerator = context.CreateCudaAccelerator(0);
 
-            Console.WriteLine("init - "+timer.Elapsed); timer = Stopwatch.StartNew();
-
             // Load the data.
             var Data = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            var Output = new int[1000000000];
+            var Output = new int[(int)float.Pow(10,ArraySize)];
             var deviceData = accelerator.Allocate1D(Data);
             var deviceOutput = accelerator.Allocate1D<int>(Output);
 
-            Console.WriteLine("Data Copied - " + timer.Elapsed); timer = Stopwatch.StartNew();
+            Points.Add(timer.Elapsed);
 
             // load / compile the kernel
             var Kernel = accelerator.LoadAutoGroupedStreamKernel(
@@ -44,12 +45,12 @@ namespace Base
             Kernel((int)deviceOutput.Length, deviceData.View, deviceOutput.View);
             accelerator.Synchronize();
 
-            Console.WriteLine("GPU Finished - "+timer.Elapsed); timer = Stopwatch.StartNew();
+            Points.Add(timer.Elapsed);
 
             //Copy data back to memory
             deviceOutput.CopyToCPU(Output);
 
-            Console.WriteLine("CPU Recieved Data - "+timer.Elapsed);
+            Points.Add(timer.Elapsed);
 
             Console.WriteLine(Output[^1]);
 
@@ -57,6 +58,56 @@ namespace Base
             timer.Stop();
             accelerator.Dispose();
             context.Dispose();
+            return Points;
+        }
+        public static List<TimeSpan> CPUTest(int ArraySize, int threads = 10)
+        {
+            List<TimeSpan> Points = new();
+            var timer = Stopwatch.StartNew();
+
+            // Load the data.
+            var Data = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            var Output = new int[(int)float.Pow(10, ArraySize)];
+            int pointsPerThread = (Output.Length / threads);
+
+            Points.Add(timer.Elapsed);
+
+            _ = Parallel.For(0, threads, thread =>
+            {
+                for (int i = (Output.Length / threads) * (thread); i < (Output.Length/threads)*(thread+1); i++)
+                {
+                    Output[i] = Data[i % Data.Length] + i;
+                }
+            });
+
+            Points.Add(timer.Elapsed);
+
+            Console.WriteLine(Output[^1]);
+
+            //dispose of stuff
+            timer.Stop();
+            return Points;
+        }
+
+        public static void printResults(List<TimeSpan> r, string title)
+        {
+            var T = StepWise(r);
+            T.Item1.Add(T.Item2);
+            ConsoleTools.Print(T.Item1.Select(i => i.ToString()).ToArray());
+        }
+        private static (List<TimeSpan>, TimeSpan) StepWise(List<TimeSpan> T)
+        {
+            TimeSpan Total = T[^1];
+            for (int i = T.Count-1; i > 0; i--)
+            {
+                TimeSpan x = T[0];
+                for (int j = 1; j < i; j++)
+                {
+                    x += T[j];
+                }
+                T[i] = x;
+            }
+            return (T, Total);
         }
         public static void listDevices()
         {
@@ -74,4 +125,52 @@ namespace Base
             }
         }
     }
+    public class ProcessCost : IDisposable
+    {
+        Context context;
+        Accelerator accelerator;
+
+        MemoryBuffer1D<float, Stride1D.Dense> GInputs;
+        MemoryBuffer1D<float, Stride1D.Dense> GOutputs;
+        MemoryBuffer1D<int, Stride1D.Dense> GDimensions;
+
+        MemoryBuffer1D<float, Stride1D.Dense> NWeights;
+        MemoryBuffer1D<float, Stride1D.Dense> NBiases;
+        MemoryBuffer1D<int, Stride1D.Dense> NIndex;
+        MemoryBuffer1D<int, Stride1D.Dense> NStructure;
+
+        public ProcessCost(FlattenedData TD, Network DefaultNetwork)
+        {
+            context = Context.CreateDefault();
+            accelerator = context.CreateCudaAccelerator(0);
+
+            //Load Data from FlattenedData into GPU
+            GInputs = accelerator.Allocate1D(TD.Inputs);
+            GOutputs = accelerator.Allocate1D(TD.Outputs);
+            GDimensions = accelerator.Allocate1D(new int[] { TD.inputCount, TD.outputCount });
+
+            loadNetwork(DefaultNetwork);
+
+        }
+        
+        public void loadNetwork(Network network)
+        {
+            NWeights = accelerator.Allocate1D(network.Weights);
+            NBiases = accelerator.Allocate1D(network.Biases);
+            NIndex = accelerator.Allocate1D(network.Index);
+            NStructure = accelerator.Allocate1D(network.Structure);
+        }
+
+        public float Run(Network.PCParams Par)
+        {
+            return 0.0f;
+        }
+
+        public void Dispose()
+        {
+            accelerator.Dispose();
+            context.Dispose();
+        }
+    }
+    
 }

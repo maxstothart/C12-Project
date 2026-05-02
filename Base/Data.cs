@@ -1,8 +1,10 @@
-﻿using CT = Tools.ConsoleTools;
+﻿using NAudio.MediaFoundation;
+using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
 
 namespace Base
 {
+    
     public struct TrainingData
     {
         private Random Rand = new();

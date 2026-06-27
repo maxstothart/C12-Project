@@ -343,6 +343,7 @@ namespace Tools
             }
             return Output.ToArray();
         }
+        
     }
     public static class Sort
     {
@@ -426,10 +427,10 @@ namespace Tools
             for (int i = 0; i < input.Length; i++) { if (input[i] < output.Value) { output = (i, input[i]); } }
             return output;
         }
-        public static int Max(List<int> input)
+        public static T Max<T>(IEnumerable<T> input) where T : INumber<T>
         {
-            int Max = 0;
-            foreach (int i in input)
+            T Max = T.Zero;
+            foreach (T i in input)
             {
                 if (i > Max)
                 {
@@ -488,9 +489,14 @@ namespace Tools
         {
             return Insert<T>(OldArray, Index, new T[] { New });
         }
-        public static T[] Add<T>(this T[] OldArray, T New) where T : struct
+        public static T[] Add<T>(this T[] OldArray, T NewData) where T : struct
         {
-            return OldArray.Concat(new T[] { New }).ToArray();
+            return OldArray.Concat(new T[] { NewData }).ToArray();
+        }
+        public static bool TryGetPosition<T>(List<T> list, T item, out int position)
+        {
+            position = list.IndexOf(item);
+            return position != -1;
         }
     }
 }

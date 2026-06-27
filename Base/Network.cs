@@ -1,6 +1,8 @@
-﻿using CT = Tools.ConsoleTools;
+﻿using System.Linq.Expressions;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
+using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
-using Tools;
 namespace Base
 {
     public struct Network()
@@ -11,6 +13,7 @@ namespace Base
         public int[] Structure;
         public float[] Weights;
         public float[] Biases;
+        public int ScalingFactor = 1;
 
         public Func<float, float> ATO = a => ReLU(a);// Sigmoid(a);// ReLU(a);
         public Func<float, float> OutputATO = a => Sigmoid(a);
@@ -55,8 +58,9 @@ namespace Base
             {
                 for (int i = 1; i < Structure[Layer + 1] + 1; i++)
                 {
-                    Index.Insert(IndexKey + NewWeights.Length + i * Structure[Layer] - 1, NodeID + i);
-                    Weights.Insert(IndexKey + NewWeights.Length + i * Structure[Layer] - 1, 0f);
+                    
+                    OP.Insert(Index, IndexKey + NewWeights.Length + i * Structure[Layer] - 1, NodeID + i);
+                    OP.Insert(Weights, IndexKey + NewWeights.Length + i * Structure[Layer] - 1, 0f);
                 }
             }
 
@@ -73,6 +77,11 @@ namespace Base
         public static float ReLU(float x)
         {
             return (x > 0) ? x : 0;
+        }
+        public static float LeakyReLu(float x)
+        {
+            float negativeWeight = 0.01f;
+            return (x > 0) ? x : x * negativeWeight;
         }
 
         public float[] Process(params float[] inputs)
@@ -181,12 +190,17 @@ namespace Base
         public void toFile(string fname)
         {
             /// File Format:
+            /// S (char)
+            /// Count of Structure Data (int)
             /// I (char)
             /// Count of index values (int)
             /// B (char)
             /// Count of Bias Values (int)
             /// W (char)
             /// Count of Weight Values (int)
+            /// F (char)
+            /// Scaling Factor of Values(int)
+            /// Structure Data (int)
             /// Index values (int).....
             /// Bias values(float).......
             /// Weight Vaules (float).....
@@ -201,6 +215,7 @@ namespace Base
             BW.Write((char)'I'); BW.Write((int)Biases.Length);
             BW.Write((char)'B'); BW.Write((int)Biases.Length);
             BW.Write((char)'W'); BW.Write((int)Weights.Length);
+            BW.Write((char)'F'); BW.Write((int)ScalingFactor);
 
             foreach (int s in Structure) { BW.Write((int)s); }
 
@@ -212,8 +227,8 @@ namespace Base
                 start = end;
             }
 
-            foreach (float Bias in Biases) { BW.Write(Bias); }
-            foreach (float W in Weights) { BW.Write(W); }
+            foreach (float Bias in Biases) { BW.Write(Bias/ScalingFactor); }
+            foreach (float W in Weights) { BW.Write(W/ScalingFactor); }
 
             BW.Write("EOF");
             BW.Close();
@@ -229,6 +244,8 @@ namespace Base
             /// Count of Bias Values (int)
             /// W (char)
             /// Count of Weight Values (int)
+            /// F (char)
+            /// Scaling Factor of Values(float)
             /// Structure Data (int)
             /// Index values (int).....
             /// Bias values(float).......
@@ -236,6 +253,11 @@ namespace Base
             /// EOF (String)
 
             Network Output = new Network();
+
+            List<int> Index = new();
+            List<int> Structure = new();
+            List<float> Weights = new();
+            List<float> Biases = new();
 
             BinaryReader BR = new(new FileStream(Fname, FileMode.Open));
 
@@ -245,10 +267,12 @@ namespace Base
             Header.Add(BR.ReadChar(), BR.ReadInt32());
             Header.Add(BR.ReadChar(), BR.ReadInt32());
             Header.Add(BR.ReadChar(), BR.ReadInt32());
+            Header.Add(BR.ReadChar(), BR.ReadInt32());
 
             for (int i = 0; i < Header['S']; i++)
             {
-                Output.Structure.Add(BR.ReadInt32());
+                //Console.WriteLine(BR.ReadInt32());
+                Structure.Add(BR.ReadInt32());
             }
 
             for (int i = 0; i < Header['I']; i++)
@@ -256,25 +280,31 @@ namespace Base
                 int k = BR.ReadInt32();
                 for (int j = 0; j < k; j++)
                 {
-                    Output.Index.Add(i);
+                    Index.Add(i);
                 }
 
             }
 
             for (int i = 0; i < Header['B']; i++)
             {
-                Output.Biases.Add(BR.ReadSingle());
+                Biases.Add(BR.ReadSingle() * Header['F']);
             }
 
             for (int i = 0; i < Header['W']; i++)
             {
-                Output.Weights.Add(BR.ReadSingle());
+                Weights.Add(BR.ReadSingle() * Header['F']);
             }
 
             if (BR.ReadString() != "EOF")
             {
                 throw new Exception("Expected EOF, didn't find it.  Maybe the file is corrupted?");
             }
+
+            Output.Structure = Structure.ToArray();
+            Output.Biases = Biases.ToArray();
+            Output.Weights = Weights.ToArray();
+            Output.Index = Index.ToArray();
+
             BR.Close();
             return Output;
 
@@ -314,6 +344,7 @@ namespace Base
             return output;
         }
     }
+    
     public static class Builder
     {
         struct Node(int ID, List<(int, float)>? _inputs)

@@ -8,36 +8,30 @@
             DataDir = "E:\\Base\\";
 
 
-            if (false)
-            {
-                //GPUSupport.listDevices();
-                GPUSupport.printResults(GPUSupport.GPUTest(9), "GPU Times");
-                GPUSupport.printResults(GPUSupport.CPUTest(9, 10), "CPU Times");
-            }
-
 
             if (true)
             {
                 Director D = new(Builder.Build(2, 3, 4, 2));
+                //Director D = new(Network.fromFile(DataDir + "xor.net"));
                 D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
 
-                D.FattenData(0.3f, 200);
+                D.FattenData(0.3f, 800);
                 D.TrainEvolutionary(
                     concurrentCount: 100,
                     threads: 20,
                     ElitePopulation: 10,
                     EpochsPerMillion: 16,
                     accuracy: -30,
-                    DataDepth: 811,
+                    DataDepth: 800,
                     maxIT: 2000000,
                     Deviation: 3f,
                     breadth: 7,
                     Par: new()
                     {
-                        WeightW = 1,
-                        BiasW = 1,
-                        outW = 5,
-                        MultFactor = 100f,
+                        WeightW = 3,
+                        BiasW = 3,
+                        outW = 1,
+                        MultFactor = 10f,
                         PFactor = 5f,
                         WBCutOff = 0.01f
                     },
@@ -46,9 +40,13 @@
                 );
                 D.N.ShowData();
                 D.TestVerbose(0.1f);
-                D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
-                D.FattenData(0.3f, 10000);
-                D.TestVerbose(0.1f);
+                //D.RoundToNearest(0.1f);
+                //D.N.ShowData();
+                //D.TestVerbose(0.1f);
+                
+                //D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
+                //D.FattenData(0.3f, 10000);
+                
 
                 D.N.toFile(DataDir + "xor.net");
             }
@@ -84,12 +82,47 @@
                 );
                 D.N.toFile(DataDir + "xor.net");
             }
+            if (true)
+            {
+                Director D = new(Network.fromFile(DataDir+"xor.net"));
+                D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
+                D.RoundToNearest(5);
+                D.N.ShowData();
+                D.TestVerbose(0.1f);
+                //D.EvolutionStaggerTrain(
+                //    origin: 0.2f,
+                //    destination: 0.4f,
+                //    attempts: 6,
+                //    concurrentCount: 100,
+                //    threads: 20,
+                //    ElitePopulation: 10,
+                //    EpochsPerMillion: 16,
+                //    accuracy: -20,
+                //    DataDepth: 200,
+                //    maxIT: 2000000,
+                //    Deviation: 3f,
+                //    breadth: 7,
+                //    Par: new()
+                //    {
+                //        WeightW = 1,
+                //        BiasW = 1,
+                //        outW = 5,
+                //        MultFactor = 10f,
+                //        PFactor = 2f,
+                //        WBCutOff = 0.01f
+                //    },
+                //    Verbose: true,
+                //    shock: false
+                //);
+                //D.TestVerbose(0.1f);
+            }
             if (false)
             {
-                Director D = new(Builder.Build(2, 3, 4, 2));
-                D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
-                D.FattenData(0.3f, 300);
-                D.TestVerbose(0.1f);
+                Director D = new Director(Builder.Build(2, 3, 4, 2));
+                D.N.toFile(DataDir + "xor.net");
+                D.N.ShowData();
+                Director D2 = new Director(Network.fromFile(DataDir + "xor.net"));
+                D2.N.ShowData();
             }
             
         }

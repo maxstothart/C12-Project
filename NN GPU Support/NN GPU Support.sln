@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37203.1 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NN GPU Support", "NN GPU Support.csproj", "{BBCCD1FB-E514-4A1F-90ED-2EA46717BF6F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Base", "..\Base\Base.csproj", "{282333B7-7E93-D73B-A9DA-A8CFD1A2B3F7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tools", "..\Tools\Tools.csproj", "{BC7D322B-31FD-136E-D08E-ECAEA5480547}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BBCCD1FB-E514-4A1F-90ED-2EA46717BF6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBCCD1FB-E514-4A1F-90ED-2EA46717BF6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBCCD1FB-E514-4A1F-90ED-2EA46717BF6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBCCD1FB-E514-4A1F-90ED-2EA46717BF6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{282333B7-7E93-D73B-A9DA-A8CFD1A2B3F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{282333B7-7E93-D73B-A9DA-A8CFD1A2B3F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{282333B7-7E93-D73B-A9DA-A8CFD1A2B3F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{282333B7-7E93-D73B-A9DA-A8CFD1A2B3F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC7D322B-31FD-136E-D08E-ECAEA5480547}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC7D322B-31FD-136E-D08E-ECAEA5480547}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC7D322B-31FD-136E-D08E-ECAEA5480547}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC7D322B-31FD-136E-D08E-ECAEA5480547}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A388341D-F21B-42AA-9AFB-F0A4C893F71D}
+	EndGlobalSection
+EndGlobal

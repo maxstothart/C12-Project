@@ -84,6 +84,31 @@ namespace Base
                 TrainEvolutionary(concurrentCount, threads, ElitePopulation, EpochsPerMillion, accuracy, ((i+1 == attempts) ? maxIT: maxIT*2), DataDepth, Deviation, breadth, Par, Verbose, shock);
             }
         }
+        public void RoundToNearest(float x)
+        {
+            float scalingFactor = 1 / x;
+            for (int i = 0; i < N.Weights.Length; i++)
+            {
+                N.Weights[i] = MathF.Round(N.Weights[i] * scalingFactor) / scalingFactor;
+            }
+            for (int i = 0; i < N.Biases.Length; i++)
+            {
+                N.Biases[i] = MathF.Round(N.Biases[i] * scalingFactor) / scalingFactor;
+            }
+        }
+
+        public void GlobalDiv(int x)
+        {
+            for (int i = 0; i < N.Weights.Length; i++)
+            {
+                N.Weights[i] /= x;
+            }
+            for (int i = 0; i < N.Biases.Length; i++)
+            {
+                N.Biases[i] /= x;
+            }
+            N.ScalingFactor = x;
+        }
 
 
 

@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Tools;
 
+
 namespace Base
 {
     public static class GPUSupport
@@ -139,15 +140,15 @@ namespace Base
         MemoryBuffer1D<int, Stride1D.Dense> NIndex;
         MemoryBuffer1D<int, Stride1D.Dense> NStructure;
 
-        public ProcessCost(FlattenedData TD, Network DefaultNetwork)
+        public ProcessCost(DirectorGPU.FlattenedData TD, Network DefaultNetwork)
         {
             context = Context.CreateDefault();
             accelerator = context.CreateCudaAccelerator(0);
 
             //Load Data from FlattenedData into GPU
-            GInputs = accelerator.Allocate1D(TD.Inputs);
-            GOutputs = accelerator.Allocate1D(TD.Outputs);
-            GDimensions = accelerator.Allocate1D(new int[] { TD.inputCount, TD.outputCount });
+            GInputs = TD.Inputs;
+            GOutputs = TD.Outputs;
+            GDimensions = accelerator.Allocate1D(new int[] { TD.DataCounts., TD.outputCount });
 
             loadNetwork(DefaultNetwork);
 

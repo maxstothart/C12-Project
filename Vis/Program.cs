@@ -94,16 +94,16 @@ class Program
             e.Graphics.DrawLine(new Pen(Colour, LineThickness), X, Y, X2, Y2);
         }
 
-        public void drawNetwork(PaintEventArgs e, List<int> structure, (float, float) Padding, (float, float) SpacingRatio, float lineThickness= 0.02f)
+        public void drawNetwork(PaintEventArgs e, int[] structure, (float, float) Padding, (float, float) SpacingRatio, float lineThickness= 0.02f)
         {
             Brush color = Brushes.Black;
 
             (float, float) windowSize = (1f - Padding.Item1 * 2, 1f - Padding.Item2 * 2);
             float nodeSize = (windowSize.Item2 / Sort.Max(structure)) * SpacingRatio.Item2;
-            float xAsDecimal = (windowSize.Item1 / (structure.Count + 1)) / 2;
+            float xAsDecimal = (windowSize.Item1 / (structure.Length + 1)) / 2;
             float xSpacing = xAsDecimal * 2 *(1f - SpacingRatio.Item1);
 
-            for (int i = 0; i < structure.Count; i++)
+            for (int i = 0; i < structure.Length; i++)
             {
                 xAsDecimal += xSpacing;
                 float yAsDecimal = Padding.Item2 + windowSize.Item2 / (structure[i] + 1);
@@ -118,10 +118,10 @@ class Program
 
             int start = 0; int next = 0;
             if (lineThickness > 0) {
-                for (int i = 0; i < structure.Count; i++)
+                for (int i = 0; i < structure.Length; i++)
                 {
                     next += structure[i];
-                    if (structure.Count > i + 1)
+                    if (structure.Length > i + 1)
                     {
                         for (int j = 0; j < structure[i + 1]; j++)
                         {

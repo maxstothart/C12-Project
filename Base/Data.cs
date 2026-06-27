@@ -86,7 +86,7 @@ namespace Base
         public void PermutateFill(float Deviation, int count = 5)
         {
             DataCount = Data.Count;
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count/DataCount; i++)
             {
                 for (int k = 0; k < DataCount; k++)
                 {

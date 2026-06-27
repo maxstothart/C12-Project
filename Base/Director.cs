@@ -22,8 +22,7 @@ namespace Base
             
 
 
-            (float, Network)[] Best = getBest(new (float, Network)[] { (float.PositiveInfinity, N) }, concurrentCount);
-            (float, Network)[] Networks = ((float, Network)[])Best.Clone();
+            
             //Console.WriteLine(timer.ElapsedMilliseconds);
 
             int i = 1;
@@ -31,26 +30,25 @@ namespace Base
             int processesPerEpoch = maxIT / Epochs / threads;
             int networksPerThread = concurrentCount / threads;
             int OldID = 0;
-            
+            var ET = Stopwatch.StartNew();
+
+            (float, Network)[] Best = getBest(new (float, Network)[] { (float.PositiveInfinity, N) }, concurrentCount);
+            (float, Network)[] Networks = ((float, Network)[])Best.Clone();
+
+            var PrevScore = float.PositiveInfinity;
             for (int Ep = 0; Ep < Epochs; Ep++)
             {
                 
 
                 Best = getBest(Networks, concurrentCount, ElitePopulation, true, n => n.ProcessCost(TD, Par));
+                //Networks = Best;
+                Networks = ((float, Network)[])Best.Clone();
                 float deviation = float.Pow(Deviation, OP.Clamp(float.Log10(Best[0].Item1), -1f, 2));
+                
+                CT.Print($"____________EPOCH________________ Total Time: {timer.Elapsed},  Epoch Time: {ET.Elapsed} - Cost: {Best[0].Item1}");
+                ET.Restart();
 
-                CT.Print("____________EPOCH________________" + Best[0].Item1);
-
-                //if (i - 100000 > OldID && shock && false)
-                //{
-                //    for (int B = 4; B < Best.Length; B++)
-                //    {
-                //        Best[B].Item2.Add(Rand.Next(Best[B].Item2.Structure.Count()-2)+1);
-                //        Best[B].Item2.Mutate(Deviation*2, breadth*2, 2);
-                //        Best[B].Item1 = Best[B].Item2.ProcessCost(TD, Par);
-                //
-                //    }
-                //}
+                PrevScore = Best[0].Item1;
 
                 TrainingData TDRand = TD.RandSubset(TD.Data.Count);
                 
@@ -83,14 +81,14 @@ namespace Base
             return i;
         }
 
-        public void EvolutionStaggerTrain(float origin, float destination, int attempts, int concurrentCount, int threads, int ElitePopulation, int EpochsPerMillion, float accuracy = -20f, int maxIT = 10000, int DataDepth = 200, float Deviation = 3f, int breadth = 2, Network.PCParams Par = default, bool Verbose = true, bool shock = false)
+        public void TrainStaggerEvolutionary(float origin, float destination, int attempts, int DataCount, int concurrentCount, int threads, int ElitePopulation, int EpochsPerMillion, float accuracy = -20f, int maxIT = 10000, int DataDepth = 200, float Deviation = 3f, int breadth = 2, Network.PCParams Par = default, bool Verbose = true, bool shock = false)
         {
             float increment = (destination - origin) / attempts;
             for (int i = 0; i < attempts; i++)
             {
                 CT.Print(origin + increment * i);
-                TD.refreshData(origin + increment * i, DataDepth/2);
-                TrainEvolutionary(concurrentCount, threads, ElitePopulation, EpochsPerMillion, accuracy, ((i+1 == attempts) ? maxIT: maxIT*2), DataDepth, Deviation, breadth, Par, Verbose, shock);
+                TD.refreshData(origin + increment * i, DataCount);
+                TrainEvolutionary(concurrentCount, threads, ElitePopulation, EpochsPerMillion, accuracy, maxIT, DataDepth, Deviation, breadth, Par, Verbose, shock);
             }
         }
         public void RoundToNearest(float x)
@@ -120,9 +118,6 @@ namespace Base
         }
 
 
-
-
-
         public (float, Network)[] getBest((float, Network)[] input, int length, int subset = 1, bool recheck = false, Func<Network, float>? CostFunction = null)
         {
             var T = Stopwatch.StartNew();
@@ -141,6 +136,9 @@ namespace Base
                     
                     if (TrueCost < LowestCost[j].Item1)
                     {
+                        // shift worse results down
+                        for (int k = subset - 1; k > j; k--)
+                            LowestCost[k] = LowestCost[k - 1];
                         LowestCost[j] = (TrueCost, i);
                         break;
                     }

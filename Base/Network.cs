@@ -15,7 +15,7 @@ namespace Base
         public float[] Biases;
         public int ScalingFactor = 1;
 
-        public Func<float, float> ATO = a => ReLU(a);// Sigmoid(a);// ReLU(a);
+        public Func<float, float> ATO = a => LeakyReLU(a);// Sigmoid(a);// ReLU(a);
         public Func<float, float> OutputATO = a => Sigmoid(a);
         public int ID = 0;
         public void Add(int Layer, float[]? NewWeights=null, float Bias=0)
@@ -78,7 +78,7 @@ namespace Base
         {
             return (x > 0) ? x : 0;
         }
-        public static float LeakyReLu(float x)
+        public static float LeakyReLU(float x)
         {
             float negativeWeight = 0.01f;
             return (x > 0) ? x : x * negativeWeight;

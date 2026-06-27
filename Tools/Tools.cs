@@ -178,7 +178,8 @@ namespace Tools
         */
 
         public String[] Indices;
-        public Dictionary<String, Object[]> Data = new Dictionary<string, Object[]>();
+        public Dictionary<String, String[]> Data = new Dictionary<string, String[]>();
+        public int Count;
         public LoadCSVFromFile(String fname, String IndexSeperator=", ", String DataSeperator=", ", params String[] CustomIndices)
         {
             String[] FileData = File.ReadLines(fname).ToArray();
@@ -192,17 +193,17 @@ namespace Tools
             else { Indices = Enumerable.Range(0, FileData[0].Split(DataSeperator).Length).Select(i => $"{i:D}").ToArray(); }
 
             //Generate dictionary and fill it with empty arrays
-            foreach (string index in Indices) { Data.Add(index, new Object[FileData.Length]); }
+            foreach (string index in Indices) { Data.Add(index, new String[FileData.Length]); }
             for (int i = 0; i < Indices.Length; i++)
             {
-                Data.TryGetValue(Indices[i], out Object[] DataAtIndex);
+                Data.TryGetValue(Indices[i], out String[] DataAtIndex);
                 for (int j = 0; j < FileData.Length; j++)
                 {
                     if (i >= FileData[j].Split(DataSeperator).Length) { DataAtIndex[j] = " "; }
                     else { DataAtIndex[j] = FileData[j].Split(DataSeperator)[i]; }
                 }
             }
-
+            Count = FileData.Length;
             
         }
         public LoadCSVFromFile(params LoadCSVFromFile[] MArr)
@@ -217,8 +218,8 @@ namespace Tools
             foreach (var lcsv in MArr) { length += lcsv.LineCount(); }
             foreach (int i in Enumerable.Range(0, Indices.Length))
             {
-                Data.Add(Indices[i], new Object[length]);
-                List<Object> Value = new List<object>();
+                Data.Add(Indices[i], new String[length]);
+                List<String> Value = new List<String>();
                 foreach (int j in Enumerable.Range(0, MArr.Length))
                 {
                     
@@ -254,41 +255,41 @@ namespace Tools
         {
             List<String> Output = new List<string>();
             Output.Add($"#{ConsoleTools.ToString(Indices, IndexSeperator)}");
-            foreach (Object[] line in this.GetAllLines())
+            foreach (String[] line in this.GetAllLines())
             {
                 Output.Add(ConsoleTools.ToString(line));
             }
             File.WriteAllLines(fname, Output);
         }
 
-        public Object[] GetLine(int line)
+        public String[] GetLine(int line)
         {
-            Object[] output = new Object[Indices.Length];
+            String[] output = new String[Indices.Length];
             for (int i = 0; i < Indices.Length; i++)
             {
-                Data.TryGetValue(Indices[i], out Object[] DataAtIndex);
+                Data.TryGetValue(Indices[i], out String[] DataAtIndex);
                 output[i] = DataAtIndex[line];
             }
             return output;
         }
-        public List<Object[]> GetLine(int[] line)
+        public List<String[]> GetLine(int[] line)
         {
-            List<Object[]> output = new List<Object[]>();
+            List<String[]> output = new List<String[]>();
             for (int i = 0; i < line.Length; i++) 
             {
                 output.Add(GetLine(line[i]));
             }
             return output;
         }
-        public List<Object[]> GetAllLines() { return this.GetLine(Enumerable.Range(0, this.LineCount()).ToArray()); }
-        public Object[] GetData(String IndexName)
+        public List<String[]> GetAllLines() { return this.GetLine(Enumerable.Range(0, this.LineCount()).ToArray()); }
+        public String[] GetData(String IndexName)
         {
-            Data.TryGetValue(IndexName, out Object[] Output);
+            Data.TryGetValue(IndexName, out String[] Output);
             return Output;
         }
-        public Object[] GetData(int Index)
+        public String[] GetData(int Index)
         {
-            Data.TryGetValue(this.Indices[Index], out Object[] Output);
+            Data.TryGetValue(this.Indices[Index], out String[] Output);
             return Output;
         }
         public int LineCount() { return this.GetData(0).Length; }
@@ -305,25 +306,25 @@ namespace Tools
             range.Remove(line);
             ReOrder(range.ToArray());
         }
-        public void Edit(int Line, int Column, Object NewValue)
+        public void Edit(int Line, int Column, String NewValue)
         {
-            Object[] x = GetData(Column);
+            String[] x = GetData(Column);
             x[Line] = NewValue;
             Data[Indices[Column]] = x;
         }
-        public void InsertLine(int index, params Object[] line)
+        public void InsertLine(int index, params String[] line)
         {
             if (index < 0) { index = 0; }
             if (index > LineCount()) { index = LineCount(); }
 
             foreach (int i in Enumerable.Range(0,Indices.Length))
             {
-                List<Object> V = GetData(i).ToList();
+                List<String> V = GetData(i).ToList();
                 V.Insert(index, line[i]);
                 Data[Indices[i]] = V.ToArray();
             }
         }
-        public void AppendLine(params Object[] Line)
+        public void AppendLine(params String[] Line)
         {
             InsertLine(LineCount(), Line);
         }
@@ -331,7 +332,7 @@ namespace Tools
         public int[] Find(String Column, String target)
         {
             List<int> Output = new List<int>();
-            Object[] D = GetData(Column);
+            String[] D = GetData(Column);
             foreach (int i in Enumerable.Range(0, LineCount()))
             {
                 //ConsoleTools.Print((String)D[i]);

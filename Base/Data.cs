@@ -1,4 +1,5 @@
 ﻿using NAudio.MediaFoundation;
+using Tools;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
 
@@ -94,6 +95,18 @@ namespace Base
             }
             BR.Close();
             return Output;
+        }
+
+        public static TrainingData fromLCSV(LoadCSVFromFile LCSV, int inputs)
+        {
+            var O = new TrainingData();
+            O.inputs = inputs;
+            O.outputs = LCSV.Indices.Length - inputs;
+            for (int i = 0; i < LCSV.Count; i++)
+            {
+                O.Data.Add((LCSV.GetLine(i)).Select(float.Parse).ToArray());
+            }
+            return O;
         }
         public List<float[]> getOrigData()
         {

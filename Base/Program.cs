@@ -17,15 +17,15 @@
 
                 D.FattenData(0.3f, 800);
                 D.TrainEvolutionary(
-                    concurrentCount: 100,
+                    concurrentCount: 40,
                     threads: 20,
-                    ElitePopulation: 10,
-                    EpochsPerMillion: 16,
-                    accuracy: -30,
-                    DataDepth: 800,
+                    ElitePopulation: 8,
+                    EpochsPerMillion: 40,
+                    accuracy: -25,
+                    DataDepth: 100,
                     maxIT: 2000000,
                     Deviation: 3f,
-                    breadth: 7,
+                    breadth: 5,
                     Par: new()
                     {
                         WeightW = 3,
@@ -35,11 +35,13 @@
                         PFactor = 5f,
                         WBCutOff = 0.01f
                     },
-                    Verbose: true,
+                    Verbose: false,
                     shock: false
                 );
-                D.N.ShowData();
-                D.TestVerbose(0.1f);
+                Console.WriteLine(D.Test(0.3f).Item2);
+                //D.N.ShowData();
+               
+                //D.TestVerbose(0.1f);
                 //D.RoundToNearest(0.1f);
                 //D.N.ShowData();
                 //D.TestVerbose(0.1f);
@@ -82,7 +84,7 @@
                 );
                 D.N.toFile(DataDir + "xor.net");
             }
-            if (true)
+            if (false)
             {
                 Director D = new(Network.fromFile(DataDir+"xor.net"));
                 D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));

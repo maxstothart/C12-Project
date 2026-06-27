@@ -118,7 +118,8 @@ namespace Base
             public float PFactor = 2f;
             public float WBCutOff = 10f;
         }
-        public float ProcessCost(TrainingData TD, int Iterations, PCParams P)
+        
+        public float ProcessCost(TrainingData TD, PCParams P)
         {
             float BCost = 0;
             float WCost = 0;
@@ -126,9 +127,8 @@ namespace Base
 
             foreach (float B in Biases) { BCost += float.Pow(float.Abs(B), 2); }
             foreach (float W in Weights) { WCost += float.Pow(float.Abs(W), 2); }
-            for (int it = 1; it < Iterations + 1; it++)
+            foreach (var point in TD.Data)
             {
-                var point = TD.getPoint();
                 var inputs = point[..TD.inputs];
                 var Expected = point[TD.inputs..];
                 var Recieved = Process(inputs);

@@ -31,6 +31,31 @@ namespace Base
             }
             CT.Print(output);
         }
+        public TrainingData RandSubset(int DataSize)
+        {
+            TrainingData Output = new();
+            Output.inputs = this.inputs;
+            Output.outputs = this.outputs;
+            for (int i = 0; i < DataSize; i++)
+            {
+                Output.Data.Add(this.Data[Rand.Next(0, this.Data.Count)]);
+            }
+            return Output;
+        }
+        public TrainingData Subset(int Pos, int DataSize)
+        {
+            TrainingData Output = new();
+            Output.inputs = this.inputs;
+            Output.outputs = this.outputs;
+            if (Pos >= Data.Count) { Pos %= Data.Count; }
+            if (DataSize >= Data.Count) { DataSize %= Data.Count; }
+            Output.Data = Data.GetRange(Pos, DataSize - (int)((Pos+DataSize) - Data.Count));
+            if (Pos + DataSize >= Data.Count) { Output.Data.AddRange(Data.GetRange(0, DataSize - Output.Data.Count)); }
+            //Console.WriteLine(Output.Data.Count);
+            return Output;
+
+            
+        }
         public float[] getPoint()
         {
             return Data[Rand.Next(Data.Count - 1)];

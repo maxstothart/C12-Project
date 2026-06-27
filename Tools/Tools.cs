@@ -498,5 +498,12 @@ namespace Tools
             position = list.IndexOf(item);
             return position != -1;
         }
+        public static List<T> GetLoopedRange<T>(this List<T> Data, int start, int count)
+        {
+            if (start >= Data.Count) { start %= Data.Count; }
+            var Out = Data.GetRange(start, count - (int)(start - Data.Count));
+            if (start + count >= Data.Count) { Out.AddRange(Data.GetRange(0, count - Out.Count)); }
+            return Out;
+        }
     }
 }

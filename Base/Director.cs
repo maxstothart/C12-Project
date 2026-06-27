@@ -13,6 +13,7 @@ namespace Base
         public void LoadData(TrainingData _TD) { TD = _TD; OldData = _TD; }
         public void LoadData(String fname) { TD = TrainingData.fromFile(fname); OldData = TD; }
         public void FattenData(float deviation, int count) { TD = OldData; TD.PermutateFill(deviation, count); }
+
         public int TrainEvolutionary(int concurrentCount, int threads, int ElitePopulation, int EpochsPerMillion, float accuracy = -20f, int maxIT = 10000, int DataDepth = 200, float Deviation = 3f, int breadth = 2, Network.PCParams Par = default, bool Verbose = true, bool shock = false)
         {
             int Epochs = EpochsPerMillion * (maxIT / 1000000);
@@ -21,58 +22,66 @@ namespace Base
             
 
 
-            (float, Network)[] Best = getBest(new (float, Network)[] { (N.ProcessCost(TD, DataDepth, Par), N) }, concurrentCount);
+            (float, Network)[] Best = getBest(new (float, Network)[] { (float.PositiveInfinity, N) }, concurrentCount);
+            (float, Network)[] Networks = ((float, Network)[])Best.Clone();
+            //Console.WriteLine(timer.ElapsedMilliseconds);
 
             int i = 1;
             concurrentCount += concurrentCount % threads;
             int processesPerEpoch = maxIT / Epochs / threads;
-            int pointsPerThread = concurrentCount / threads;
+            int networksPerThread = concurrentCount / threads;
             int OldID = 0;
-
+            
             for (int Ep = 0; Ep < Epochs; Ep++)
             {
-                //if (Verbose) { CT.Print("____________EPOCH________________"); }
+                
 
-                Best = getBest(Best, concurrentCount, ElitePopulation);
+                Best = getBest(Networks, concurrentCount, ElitePopulation, true, n => n.ProcessCost(TD, Par));
                 float deviation = float.Pow(Deviation, OP.Clamp(float.Log10(Best[0].Item1), -1f, 2));
 
+                CT.Print("____________EPOCH________________" + Best[0].Item1);
 
-                if (i - 100000 > OldID && shock)
-                {
-                    for (int B = 4; B < Best.Length; B++)
-                    {
-                        //Best[B].Item2.Add(Rand.Next(Best[B].Item2.Structure.Count-2)+1);
-                        Best[B].Item2.Mutate(Deviation*2, breadth*2, 2);
-                        Best[B].Item1 = Best[B].Item2.ProcessCost(TD, DataDepth, Par);
-                    }
-                }
+                //if (i - 100000 > OldID && shock && false)
+                //{
+                //    for (int B = 4; B < Best.Length; B++)
+                //    {
+                //        Best[B].Item2.Add(Rand.Next(Best[B].Item2.Structure.Count()-2)+1);
+                //        Best[B].Item2.Mutate(Deviation*2, breadth*2, 2);
+                //        Best[B].Item1 = Best[B].Item2.ProcessCost(TD, Par);
+                //
+                //    }
+                //}
+
+                TrainingData TDRand = TD.RandSubset(TD.Data.Count);
+                
+
                 if (float.Abs(Best[0].Item1) - float.Pow(10, accuracy) <= 0 || Best[0].Item1 == 0) { break; }
                 _ = Parallel.For(0, threads, thread =>
                 {
-
+                    TrainingData TDSubset = TDRand.Subset((DataDepth * thread), DataDepth);
                     for (int j = 0; j < processesPerEpoch; j++)
                     {
 
                         int CIndex = i;
-                        int position = thread * pointsPerThread + i % pointsPerThread;
-                        var NewN = Best[position].Item2.Copy(CIndex).Mutate(deviation, breadth, 2);
-                        var Cost = NewN.ProcessCost(TD, DataDepth, Par);
-                        if (Cost < Best[position].Item1)
+                        int position = thread * networksPerThread + i % networksPerThread;
+                        var NewN = Networks[position].Item2.Copy(CIndex).Mutate(deviation, breadth, 2);
+                        var Cost = NewN.ProcessCost(TDSubset, Par);
+                        if (Cost < Networks[position].Item1)
                         {
-                            Best[position] = (Cost, NewN.Copy());
+                            Networks[position] = (Cost, NewN.Copy());
                             _ = Interlocked.Exchange(ref OldID, i);
-                            if (Verbose) { CT.Print($"IT: {Best[position].Item2.ID} - {Best[position].Item1} - {deviation}"); }
+                            if (Verbose) { CT.Print($"IT: {Networks[position].Item2.ID} - {Networks[position].Item1} - {deviation}"); }
                         }
                         Interlocked.Increment(ref i);
                     }
                     Interlocked.Increment(ref i);
                 });
-                }
-                timer.Stop();
-                this.N = getBest(Best, 1)[0].Item2;
-                CT.Print($"{i} Iterations, Final Cost: {N.ProcessCost(TD, 200, Par)}, Time Ellapsed: {timer.Elapsed.ToString()}");
-                return i;
             }
+            timer.Stop();
+            this.N = getBest(Best, 1, 1, true, n => n.ProcessCost(TD, Par))[0].Item2;
+            CT.Print($"{i} Iterations, Final Cost: {N.ProcessCost(TD, Par)}, Time Ellapsed: {timer.Elapsed.ToString()}");
+            return i;
+        }
 
         public void EvolutionStaggerTrain(float origin, float destination, int attempts, int concurrentCount, int threads, int ElitePopulation, int EpochsPerMillion, float accuracy = -20f, int maxIT = 10000, int DataDepth = 200, float Deviation = 3f, int breadth = 2, Network.PCParams Par = default, bool Verbose = true, bool shock = false)
         {
@@ -114,8 +123,9 @@ namespace Base
 
 
 
-        public static (float, Network)[] getBest((float, Network)[] input, int length, int subset = 1)
+        public (float, Network)[] getBest((float, Network)[] input, int length, int subset = 1, bool recheck = false, Func<Network, float>? CostFunction = null)
         {
+            var T = Stopwatch.StartNew();
             (float, int)[] LowestCost = new (float, int)[subset];
             for (int i = 0; i < subset; i++)
             {
@@ -126,9 +136,12 @@ namespace Base
             {
                 for (int j = 0; j < subset; j++)
                 {
-                    if (input[i].Item1 < LowestCost[j].Item1)
+                    float TrueCost = input[i].Item1;
+                    if (recheck) { TrueCost = CostFunction(input[i].Item2); }
+                    
+                    if (TrueCost < LowestCost[j].Item1)
                     {
-                        LowestCost[j] = (input[i].Item1, i);
+                        LowestCost[j] = (TrueCost, i);
                         break;
                     }
                 }
@@ -139,6 +152,8 @@ namespace Base
             {
                 output.Add(input[LowestCost[i % subset].Item2]);
             }
+            T.Stop();
+            Console.WriteLine(T.Elapsed);
             return output.ToArray();
         }
         public (bool Pass, float Accuracy, List<(float[], float[], float[], bool)> DataPoints) Test(float passAccuracy = 0.001f)
@@ -176,4 +191,9 @@ namespace Base
             CT.Print("Test Passed    | "+Test.Item1);
         }
     }
+    public static class DirectorExtensions
+    {
+
+    }
+
 }

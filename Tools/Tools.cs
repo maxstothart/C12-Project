@@ -161,6 +161,16 @@ namespace Tools
             }
             return output;
         }
+        public static string WithPadding(String input, String Longest)
+        {
+            return $"{input}{new String(' ', Longest.Length - input.Length)}";
+        }
+        public static string WithPadding(int input, int Longest, char? FillChar = '0')
+        {
+            string SI = input.ToString();
+            if (FillChar.HasValue) return $"{new(FillChar.Value, Longest.ToString().Length - SI.Length)}{SI}";
+            return WithPadding(SI, Longest.ToString());
+        }
     }
     public class LoadCSVFromFile
     {
@@ -177,6 +187,10 @@ namespace Tools
               EOF signals the end.  Use Midway through file to manage data load.
         */
 
+        public struct RowView
+        {
+
+        }
         public String[] Indices;
         public Dictionary<String, String[]> Data = new Dictionary<string, String[]>();
         public int Count;
@@ -260,6 +274,20 @@ namespace Tools
                 Output.Add(ConsoleTools.ToString(line));
             }
             File.WriteAllLines(fname, Output);
+        }
+
+        public void ToBinary(String fname, String IndexSeperator = ", ", String DataSeperator = ", ")
+        {
+            ///File Format
+            /// "LCSV"
+            /// Column count - (int)
+            /// RowCount - (int)
+            /// ColumnName - ()
+            /// 
+            BinaryWriter BW = new(new MemoryStream());
+            BW.Write("LCSV");
+            BW.Write((int)Indices.Length);
+
         }
 
         public String[] GetLine(int line)

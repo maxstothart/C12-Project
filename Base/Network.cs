@@ -1,5 +1,7 @@
-﻿using System.Linq.Expressions;
+﻿using NAudio.Codecs;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 using System.Runtime.Serialization;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
@@ -15,7 +17,7 @@ namespace Base
         public float[] Biases;
         public int ScalingFactor = 1;
 
-        public Func<float, float> ATO = a => LeakyReLU(a);// Sigmoid(a);// ReLU(a);
+        public Func<float, float> ATO = a => Sigmoid(a);// Sigmoid(a);// ReLU(a);
         public Func<float, float> OutputATO = a => Sigmoid(a);
         public int ID = 0;
         public void Add(int Layer, float[]? NewWeights=null, float Bias=0)
@@ -68,7 +70,7 @@ namespace Base
 
         public static float Sigmoid(float x)
         {
-            return (float)(1 / (1 + Math.Pow(Math.E, -x)));
+            return (float)(1 / (1 + Math.Exp(-x)));
         }
         public static float HyperbolicTan(float x)
         {
@@ -80,13 +82,15 @@ namespace Base
         }
         public static float LeakyReLU(float x)
         {
-            float negativeWeight = 0.01f;
+            float negativeWeight = 0.1f;
             return (x > 0) ? x : x * negativeWeight;
         }
 
-        public float[] Process(params float[] inputs)
+
+        public float[] ProcessFull(params float[] inputs)
         {
-            var Data = inputs.Concat(new float[Biases.Length - inputs.Length]).ToArray();
+            float[] Data = new float[Biases.Length];
+            Array.Copy(inputs, Data, inputs.Length);
             int currIndex = inputs.Length;
             int POffset = 0;
             int COffset = inputs.Length;
@@ -95,19 +99,24 @@ namespace Base
             {
                 for (int NodeInLayer = 0; NodeInLayer < Structure[Layer]; NodeInLayer++)
                 {
+                    float sum = Biases[COffset + NodeInLayer];
                     for (int NodeInPrevLayer = 0; NodeInPrevLayer < Structure[Layer - 1]; NodeInPrevLayer++)
                     {
-                        Data[COffset + NodeInLayer] += Data[POffset + NodeInPrevLayer] * Weights[currIndex];
+                        sum = MathF.FusedMultiplyAdd(Data[POffset + NodeInPrevLayer], Weights[currIndex], sum);
                         currIndex++;
                     }
-                    if (Layer+1 == Structure.Length) { Data[COffset + NodeInLayer] = Sigmoid(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]); }
-                    else { Data[COffset + NodeInLayer] = OutputATO(Data[COffset + NodeInLayer] + Biases[COffset + NodeInLayer]); }
-                        
+                    if (Layer + 1 == Structure.Length) { Data[COffset + NodeInLayer] = ATO(sum); }
+                    else { Data[COffset + NodeInLayer] = OutputATO(sum); }
+
                 }
                 POffset = COffset;
                 COffset += Structure[Layer];
             }
-            return Data[^Structure[^1]..];
+            return Data;
+        }
+        public float[] Process(params float[] inputs)
+        {
+            return ProcessFull(inputs)[^Structure[^1]..];
         }
         public struct PCParams()
         {
@@ -119,7 +128,7 @@ namespace Base
             public float WBCutOff = 10f;
         }
         
-        public float ProcessCost(TrainingData TD, PCParams P)
+        public float ProcessCost(TrainingData TD, PCParams P, bool Pure = false)
         {
             float BCost = 0;
             float WCost = 0;
@@ -347,6 +356,7 @@ namespace Base
     
     public static class Builder
     {
+        
         struct Node(int ID, List<(int, float)>? _inputs)
         {
             public int NodeID = ID;
@@ -378,6 +388,7 @@ namespace Base
 
         public static Network Build(params List<int> Structure)
         {
+            Random rand = new();
             List<Layer> Layers = new();
             Layers.Add(new Layer(null).Populate(Structure[0], 0));
             int NodeID = Structure[0];
@@ -402,7 +413,7 @@ namespace Base
                     if (N.inputs == null)
                     {
                         Index.Add(N.NodeID);
-                        Weights.Add(1f);
+                        Weights.Add((rand.NextSingle() - 0.5f) * 0.1f);
                     }
                     else
                     {

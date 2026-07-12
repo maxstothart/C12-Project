@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Tools;
 
 namespace Base
 {
@@ -10,39 +11,49 @@ namespace Base
             DataDir = "E:\\Base\\";
 
 
+            if (false)
+            {
+                Director D = new(Builder.Build(2, 5, 4, 3, 2));
+                var TD = TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", DataSeperator:" "), 2);
+                D.LoadData(TD);
+                D.TrainBackProp(100, 0.1f);
+            }
+
             if (true)
             {
-                Director D = new(Builder.Build(3, 5, 5, 3, 1));
-                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3bitparity.Hdat", ", ", " "), 3);
+                Director D = new(Builder.Build(8, 16, 8, 5));
+                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "4badder.Hdat", ",", ","), 8);
                 D.LoadData(TD);
 
-                D.FattenData(0.3f, 800);
+                D.FattenData(0.0001f, 200);
+
                 D.TrainEvolutionary(
-                    concurrentCount: 20,
+                    concurrentCount: 80,
                     threads: 20,
-                    ElitePopulation: 4,
-                    EpochsPerMillion: 40,
-                    accuracy: -25,
+                    ElitePopulation: 8,
+                    EliteEnd: 16,
+                    EpochsPerMillion: 10,
+                    accuracy: -25, 
                     DataDepth: 200,
-                    maxIT: 2000000,
+                    maxIT: 20_000_000,
                     Deviation: 3f,
-                    breadth: 7,
+                    breadth: 5,
                     Par: new()
                     {
-                        WeightW = 3,
-                        BiasW = 3,
-                        outW = 1,
+                        WeightW = 1,
+                        BiasW = 1,
+                        outW = 3,
                         MultFactor = 10f,
                         PFactor = 5f,
-                        WBCutOff = 0.01f
+                        WBCutOff = float.PositiveInfinity
                     },
-                    Verbose: false,
-                    shock: true
+                    Verbose: 0,
+                    shock: false
                 );
-                Console.WriteLine(D.Test(0.3f).Item2);
+                //Console.WriteLine("Worst Accuracy"D.Test(0.3f).Item2);
                 //D.N.ShowData();
 
-                //D.TestVerbose(0.1f);
+                D.TestVerbose(0.3f);
                 //D.RoundToNearest(0.1f);
                 //D.N.ShowData();
                 //D.TestVerbose(0.1f);
@@ -55,40 +66,85 @@ namespace Base
             }
             if (false)
             {
-                Director D = new(Builder.Build(2, 3, 4, 2));
-                //Director D = new(Network.fromFile(DataDir + "xor.net"));
-                D.LoadData(TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " "), 2));
+                Director D = new(Builder.Build(3, 6, 4, 1));
+                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3bitparity.Hdat", ", ", " "), 3);
+                D.LoadData(TD);
 
-                D.FattenData(0.3f, 800);
+                D.FattenData(0.2f, 800);
                 D.TrainEvolutionary(
                     concurrentCount: 20,
                     threads: 20,
-                    ElitePopulation: 4,
-                    EpochsPerMillion: 40,
+                    ElitePopulation: 5,
+                    EliteEnd: 10,
+                    EpochsPerMillion: 20,
                     accuracy: -25,
-                    DataDepth: 10,
+                    DataDepth: 50,
+                    maxIT: 2000000,
+                    Deviation: 2f,
+                    breadth: 5,
+                    Par: new()
+                    {
+                        WeightW = 1,
+                        BiasW = 1,
+                        outW = 3,
+                        MultFactor = 10f,
+                        PFactor = 5f,
+                        WBCutOff = float.PositiveInfinity
+                    },
+                    Verbose: 0,
+                    shock: false
+                );
+                //Console.WriteLine("Worst Accuracy"D.Test(0.3f).Item2);
+                //D.N.ShowData();
+
+                D.TestVerbose(0.3f);
+                //D.RoundToNearest(0.1f);
+                //D.N.ShowData();
+                //D.TestVerbose(0.1f);
+
+                //D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
+                //D.FattenData(0.3f, 10000);
+
+
+                D.N.toFile(DataDir + "xor.net");
+            }
+            if (false)
+            {
+                Director D = new(Builder.Build(2, 4, 4, 2));
+                //Director D = new(Network.fromFile(DataDir + "xor.net"));
+                //D.LoadData(TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " "), 2));
+                D.LoadData(DataDir + "xor.dat");
+
+                D.FattenData(0.30f, 800);
+                D.TrainEvolutionary(
+                    concurrentCount: 20,
+                    threads: 20,
+                    ElitePopulation: 2,
+                    EliteEnd: 10,
+                    EpochsPerMillion: 40,
+                    accuracy: -20,
+                    DataDepth: 20,
                     maxIT: 2000000,
                     Deviation: 3f,
                     breadth: 5,
                     Par: new()
                     {
-                        WeightW = 3,
-                        BiasW = 3,
+                        WeightW = 5,
+                        BiasW = 5,
                         outW = 1,
                         MultFactor = 10f,
                         PFactor = 5f,
-                        WBCutOff = 0.01f
+                        WBCutOff = 1
                     },
-                    Verbose: false,
+                    Verbose: 0,
                     shock: false
                 );
-                Console.WriteLine(D.Test(0.3f).Item2);
                 //D.N.ShowData();
                
                 //D.TestVerbose(0.1f);
-                //D.RoundToNearest(0.1f);
+                //D.RoundToNearest(1f);
                 //D.N.ShowData();
-                //D.TestVerbose(0.1f);
+                D.TestVerbose(0.4f);
                 
                 //D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
                 //D.FattenData(0.3f, 10000);
@@ -109,6 +165,7 @@ namespace Base
                     concurrentCount: 100,
                     threads: 20,
                     ElitePopulation: 40,
+                    EliteEnd: 80,
                     EpochsPerMillion: 16,
                     accuracy: -20,
                     DataDepth: 300,
@@ -124,45 +181,12 @@ namespace Base
                         PFactor = 2f,
                         WBCutOff = 0.01f
                     },
-                    Verbose: true,
+                    Verbose: 0,
                     shock: false
                 );
                 D.N.toFile(DataDir + "xor.net");
             }
-            if (false)
-            {
-                Director D = new(Network.fromFile(DataDir+"xor.net"));
-                D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
-                D.RoundToNearest(5);
-                D.N.ShowData();
-                D.TestVerbose(0.1f);
-                //D.EvolutionStaggerTrain(
-                //    origin: 0.2f,
-                //    destination: 0.4f,
-                //    attempts: 6,
-                //    concurrentCount: 100,
-                //    threads: 20,
-                //    ElitePopulation: 10,
-                //    EpochsPerMillion: 16,
-                //    accuracy: -20,
-                //    DataDepth: 200,
-                //    maxIT: 2000000,
-                //    Deviation: 3f,
-                //    breadth: 7,
-                //    Par: new()
-                //    {
-                //        WeightW = 1,
-                //        BiasW = 1,
-                //        outW = 5,
-                //        MultFactor = 10f,
-                //        PFactor = 2f,
-                //        WBCutOff = 0.01f
-                //    },
-                //    Verbose: true,
-                //    shock: false
-                //);
-                //D.TestVerbose(0.1f);
-            }
+
             if (false)
             {
                 Director D = new Director(Builder.Build(2, 3, 4, 2));

@@ -402,7 +402,7 @@ namespace Tools
             foreach (var item in data.OrderBy(item => item.Value).ToList()) { output.Item1.Add(item.OriginalIndex); output.Item2.Add(item.Value.ToString()); }
             return (output.Item1.ToArray(), output.Item2.ToArray());
         }
-        public static (int[], T[]) Bubble<T>(T[] input)
+        public static (int[], T[]) Bubble<T>(T[] input) where T : INumber<T>
         {
             (List<int>, List<T>) output = (new(), new());
 

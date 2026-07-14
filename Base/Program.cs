@@ -10,30 +10,73 @@ namespace Base
             String DataDir = "/mnt/e/Base/";
             DataDir = "E:\\Base\\";
 
-
             if (false)
             {
                 Director D = new(Builder.Build(2, 5, 4, 3, 2));
-                var TD = TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", DataSeperator:" "), 2);
+                var TD = TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", DataSeperator: " "), 2);
                 D.LoadData(TD);
                 D.TrainBackProp(100, 0.1f);
             }
-
             if (true)
+            {
+                Director D = new(Builder.Build(6, 8, 8, 4));
+                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3BAdder.Hdat", ", ", " "), 6);
+                D.LoadData(TD);
+
+                D.FattenData(0.0001f, 300);
+
+                D.TrainEvolutionary(
+                    concurrentCount: 40,
+                    threads: 20,
+                    ElitePopulation: 8,
+                    EliteDuplication: 20,
+                    EpochsPerMillion: 20,
+                    accuracy: -25,
+                    DataDepth: 80,
+                    maxIT: 5_000_000,
+                    Deviation: 4f,
+                    breadth: 7,
+                    Par: new()
+                    {
+                        WeightW = 1,
+                        BiasW = 1,
+                        outW = 3,
+                        MultFactor = 10f,
+                        PFactor = 5f,
+                        WBCutOff = float.PositiveInfinity
+                    },
+                    Verbose: 0,
+                    shock: false
+                );
+                //Console.WriteLine("Worst Accuracy"D.Test(0.3f).Item2);
+                //D.N.ShowData();
+
+                D.TestVerbose(0.3f);
+                //D.RoundToNearest(0.1f);
+                //D.N.ShowData();
+                //D.TestVerbose(0.1f);
+
+                //D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
+                //D.FattenData(0.3f, 10000);
+
+
+                D.N.toFile(DataDir + "xor.net");
+            }
+            if (false)
             {
                 Director D = new(Builder.Build(8, 16, 8, 5));
                 var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "4badder.Hdat", ",", ","), 8);
                 D.LoadData(TD);
 
-                D.FattenData(0.0001f, 200);
+                D.FattenData(0.0001f, 300);
 
                 D.TrainEvolutionary(
                     concurrentCount: 80,
                     threads: 20,
                     ElitePopulation: 8,
-                    EliteEnd: 16,
+                    EliteDuplication: 16,
                     EpochsPerMillion: 10,
-                    accuracy: -25, 
+                    accuracy: -25,
                     DataDepth: 200,
                     maxIT: 20_000_000,
                     Deviation: 3f,
@@ -64,7 +107,7 @@ namespace Base
 
                 D.N.toFile(DataDir + "xor.net");
             }
-            if (false)
+            if (true)
             {
                 Director D = new(Builder.Build(3, 6, 4, 1));
                 var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3bitparity.Hdat", ", ", " "), 3);
@@ -75,10 +118,10 @@ namespace Base
                     concurrentCount: 20,
                     threads: 20,
                     ElitePopulation: 5,
-                    EliteEnd: 10,
-                    EpochsPerMillion: 20,
+                    EliteDuplication: 2,
+                    EpochsPerMillion: 40,
                     accuracy: -25,
-                    DataDepth: 50,
+                    DataDepth: 150,
                     maxIT: 2000000,
                     Deviation: 2f,
                     breadth: 5,
@@ -115,12 +158,12 @@ namespace Base
                 //D.LoadData(TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " "), 2));
                 D.LoadData(DataDir + "xor.dat");
 
-                D.FattenData(0.30f, 800);
+                D.FattenData(0.3f, 800);
                 D.TrainEvolutionary(
                     concurrentCount: 20,
                     threads: 20,
                     ElitePopulation: 2,
-                    EliteEnd: 10,
+                    EliteDuplication: 10,
                     EpochsPerMillion: 40,
                     accuracy: -20,
                     DataDepth: 20,
@@ -140,15 +183,15 @@ namespace Base
                     shock: false
                 );
                 //D.N.ShowData();
-               
+
                 //D.TestVerbose(0.1f);
                 //D.RoundToNearest(1f);
                 //D.N.ShowData();
                 D.TestVerbose(0.4f);
-                
+
                 //D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
                 //D.FattenData(0.3f, 10000);
-                
+
 
                 D.N.toFile(DataDir + "xor.net");
             }
@@ -159,13 +202,13 @@ namespace Base
 
                 D.TrainStaggerEvolutionary(
                     origin: 0f,
-                    destination: 0.3f, 
-                    attempts: 6, 
+                    destination: 0.3f,
+                    attempts: 6,
                     DataCount: 1200,
                     concurrentCount: 100,
                     threads: 20,
                     ElitePopulation: 40,
-                    EliteEnd: 80,
+                    EliteDuplication: 80,
                     EpochsPerMillion: 16,
                     accuracy: -20,
                     DataDepth: 300,
@@ -194,9 +237,7 @@ namespace Base
                 D.N.ShowData();
                 Director D2 = new Director(Network.fromFile(DataDir + "xor.net"));
                 D2.N.ShowData();
-            }
-            
-        }
-        
+            }            
+        }        
     }
 }

@@ -5,9 +5,12 @@ namespace Vis
 {
 class Program
     {
+        public record ProgramArgs(float NodeScale = 60, float WeightScale = 0.0015f, int WindowWidth = 800, int WindowHeight = 400 , DockStyle DockPosition = DockStyle.Bottom);
+
         [STAThread]
         static void Main()
         {
+            var PA = new ProgramArgs(60, 0.0020f, 400, 400, DockStyle.Bottom);
             Application.EnableVisualStyles();
 
             Console.WriteLine("Enter FileName: ");
@@ -15,9 +18,10 @@ class Program
             if (fname[0] == '_') { fname = "E:\\Base\\"+fname[1..]; }
             if (fname[^1] == '_') { fname = fname[..^1] + ".net"; }
             // This starts the UI loop and opens the window
-            Application.Run(new ShowNetwork(Network.fromFile(fname), new DrawArgs(60f, .4f, 0.0015f)));
+            Application.Run(new ShowNetwork(Network.fromFile(fname), new DrawArgs(PA.NodeScale, PA.WeightScale), PA.WindowWidth, PA.WindowHeight, PA.DockPosition));
         }
     }
+
     public class ShowNetwork : Form
     {
         private Network N;
@@ -27,15 +31,14 @@ class Program
         private Splitter PanelResizer;
         private List<(float, float, int)> NodeCoordinates = new();
         private DrawArgs InputArgs;
-        private float DotSize;
-
         
 
-        public ShowNetwork(Network _N, DrawArgs D, int WindowWidth = 400, int WindowHeight = 800)
+        public ShowNetwork(Network _N, DrawArgs D, int WindowWidth = 400, int WindowHeight = 800, DockStyle BarPosition = DockStyle.Bottom)
         {
+            this.Text = "Network Viewer";
             InputArgs = D;
             ScrollView = new Panel();
-            ScrollView.Dock = DockStyle.Bottom;
+            ScrollView.Dock = BarPosition;
             ScrollView.AutoScroll = true;
             
             
@@ -48,14 +51,14 @@ class Program
             this.Controls.Add(ScrollView);
 
             PanelResizer = new Splitter();
-            PanelResizer.Dock = DockStyle.Bottom;
+            PanelResizer.Dock = BarPosition;
             PanelResizer.Height = 5; // Thickness of the draggable handle
             PanelResizer.BackColor = Color.DarkGray;
             PanelResizer.SplitterMoved += new((s,e) => NetworkDiagram.Refresh());
 
             NetworkDiagram = new PictureBox();
             NetworkDiagram.Location = new Point(0, 0);
-            NetworkDiagram.Size = new Size(WindowWidth, WindowHeight/4*3); // Define your total layout space here
+            NetworkDiagram.Size = new Size(WindowWidth, WindowHeight); // Define your total layout space here
             NetworkDiagram.Dock = DockStyle.Fill; // Fills everything left over
             NetworkDiagram.Paint += new(PaintTop);
 
@@ -65,7 +68,7 @@ class Program
 
             this.Resize += (s, e) => { NetworkDiagram.Refresh(); ScrollCanvas.Refresh(); }; // Refresh on resize
             N = _N;
-            this.Size = new Size(WindowWidth, WindowHeight/2);
+            this.Size = new Size(WindowWidth, WindowHeight);
             this.DoubleBuffered = true;
         }
 
@@ -78,12 +81,12 @@ class Program
             for (int i = 1; i < N.Structure.Length; i++)
             {
                 int PCount = N.Structure[i - 1] * N.Structure[i];
-                g.DrawString("Weights: \n" + string.Join("\n", N.Weights[Pos..(Pos + PCount)]), new Font("Arial", 10), Brushes.Black, new PointF(XPos, 10));
+                g.DrawString($"L{i}_Weights: \n\n" + string.Join("\n", N.Weights[Pos..(Pos + PCount)]), new Font("Arial", 10), Brushes.Black, new PointF(XPos, 10));
                 Pos += PCount;
                 XPos += StepSize;
             }
             
-            g.DrawString("Biases: \n" + string.Join("\n", N.Biases), new Font("Arial", 10), Brushes.Black, new PointF(XPos, 10));
+            g.DrawString("Biases: \n\n" + string.Join("\n", N.Biases), new Font("Arial", 10), Brushes.Black, new PointF(XPos, 10));
         }
         private void PaintTop(object sender, PaintEventArgs e)
         {
@@ -109,7 +112,7 @@ class Program
             e.Graphics.DrawLine(new Pen(Colour, LineThickness * e.ClipRectangle.Height), X, Y, X2, Y2);
         }
 
-        public record DrawArgs(float NodeSize, float XRatio, float WeightScalar);
+        public record DrawArgs(float NodeSize, float WeightScalar);
         public void drawNetworkBetter(PaintEventArgs e, Base.Network N, DrawArgs D)
         {
             Brush color = Brushes.Black;

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using Tools;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
@@ -322,13 +323,25 @@ namespace Base
             }
             return (NPassed, largestDrift, Output);
         }
-        public void TestVerbose(float passAccuracy = 0.001f)
+        public String[] TestVerbose(float passAccuracy = 0.001f, (float Accuracy, float Count)? DataPerm = null, bool print = true)
         {
+            List<string> Output = new();
+            if (DataPerm != null) { TD.PermutateFill(DataPerm.Value.Accuracy, (int)DataPerm.Value.Count); }
             var Test = this.Test(passAccuracy);
-            CT.Print(Test.Item3.Select(a => $"{a.Item4} - ({CT.ToString(CT.toNSD(a.Item1, 2))}), ({CT.ToString(CT.toNSD(a.Item2, 2))}), ({CT.ToString(CT.toNSD(a.Item3, 2))})").ToArray(), null, "Results: ", 5);
-            CT.Print("________Final Results_______");
-            CT.Print("Worst Accuracy | " + Test.Item2);
-            CT.Print("Test Passed    | " + Test.Item1);
+
+            Output.AddRange(CT.Print(Test.Item3.Select(a => $"{a.Item4} - ({CT.ToString(CT.toNSD(a.Item1, 2))}), ({CT.ToString(CT.toNSD(a.Item2, 2))}), ({CT.ToString(CT.toNSD(a.Item3, 2))})").ToArray(), null, "Results: (I1, I2....O1, O2....), (Recieved), (Distance)", 5, false));
+            Output.Add("________Final Results_______:");
+            Output.Add("Worst Accuracy | " + Test.Item2);
+            Output.Add("Test Passed    | " + Test.Item1);
+
+            if (print)
+            {
+                foreach (var line in Output)
+                {
+                    Console.WriteLine(line);
+                }
+            }
+            return Output.ToArray();
         }
     }
     public static class DirectorExtensions

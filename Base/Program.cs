@@ -10,7 +10,7 @@ namespace Base
             String DataDir = "/mnt/e/Base/";
             DataDir = "E:\\Base\\";
 
-            if (true)
+            if (false)
             {
                 Director D = new(Network.fromFile(DataDir + "xor.net"));
                 D.N.ShowData();
@@ -57,7 +57,7 @@ namespace Base
                 //Console.WriteLine("Worst Accuracy"D.Test(0.3f).Item2);
                 //D.N.ShowData();
 
-                D.TestVerbose(0.3f);
+                D.TestVerbose(0.4f);
                 //D.RoundToNearest(0.1f);
                 //D.N.ShowData();
                 //D.TestVerbose(0.1f);
@@ -115,11 +115,12 @@ namespace Base
             }
             if (false)
             {
-                Director D = new(Builder.Build(3, 6, 4, 1));
+                //Director D = new(Builder.Build(3, 6, 4, 1));
+                Director D = new(Network.fromFile(DataDir + "3BParity.net"));
                 var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3bitparity.Hdat", ", ", " "), 3);
                 D.LoadData(TD);
 
-                D.FattenData(0.1f, 400);
+                D.FattenData(0.3f, 400);
                 D.TrainEvolutionary(
                     concurrentCount: 20,
                     threads: 20,
@@ -142,11 +143,8 @@ namespace Base
                     },
                     Verbose: 0,
                     shock: false
-                );
-                //Console.WriteLine("Worst Accuracy"D.Test(0.3f).Item2);
-                //D.N.ShowData();
-
-                D.TestVerbose(0.1f);
+                ); 
+                D.TestVerbose(0.1f, (0.3f, 1200), true);
                 //D.RoundToNearest(0.1f);
                 //D.N.ShowData();
                 //D.TestVerbose(0.1f);
@@ -157,12 +155,12 @@ namespace Base
 
                 D.N.toFile(DataDir + "3BParity.net");
             }
-            if (false)
+            if (true)
             {
                 Director D = new(Builder.Build(2, 4, 4, 2));
                 //Director D = new(Network.fromFile(DataDir + "xor.net"));
                 //D.LoadData(TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " "), 2));
-                D.LoadData(DataDir + "xor.dat");
+                D.LoadData(TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " "), 2));
 
                 D.FattenData(0.3f, 800);
                 D.TrainEvolutionary(

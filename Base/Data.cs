@@ -1,4 +1,5 @@
-﻿using Tools;
+﻿using ILGPU.Runtime.Cuda;
+using Tools;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
 
@@ -93,6 +94,7 @@ namespace Base
                 Output.Data.Add(Entry);
             }
             BR.Close();
+            Output.DataCount = Output.Data.Count;
             return Output;
         }
 
@@ -105,6 +107,7 @@ namespace Base
             {
                 O.Data.Add((LCSV.GetLine(i)).Select(float.Parse).ToArray());
             }
+            O.DataCount = O.Data.Count;
             return O;
         }
         public List<float[]> getOrigData()
@@ -122,7 +125,7 @@ namespace Base
         }
         public void PermutateFill(float Deviation, int count = 5)
         {
-            DataCount = Data.Count;
+            Data = Data[..DataCount];
             for (int i = 0; i < count/DataCount; i++)
             {
                 for (int k = 0; k < DataCount; k++)

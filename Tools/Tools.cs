@@ -31,8 +31,9 @@ namespace Tools
         public static void Print(int input) { Console.WriteLine(input); }
         public static void Print(bool input) { Console.WriteLine(input); }
         public static void Print(double input) { Console.WriteLine(input); }
-        public static void Print(string[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print(string[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2, bool write = true)
         {
+            List<string> Output = new();
             if (input == null) { Console.WriteLine("Input Empty"); }
             else
             {
@@ -41,51 +42,59 @@ namespace Tools
                 foreach (int i in Enumerable.Range(0, SpacerMax)) { LineSpacer += " "; }
                 foreach (int i in Enumerable.Range(0, Name.Length)) { EndSpacer += "-"; }
 
-                Console.WriteLine("------ " + Name + " ------");
+                Output.Add("------ " + Name + " ------");
                 foreach (int i in Enumerable.Range(0, input.Length))
                 {
-                    try { Console.WriteLine(((index == null) ? i : index[i]).ToString() + LineSpacer[((index == null) ? i : index[i]).ToString().Length..(SpacerMax)] + "| " + input[i]); }
-                    catch (ArgumentOutOfRangeException ex) { Console.WriteLine("SpacerMax too small to show full data, try increasing it."); }
-                    
+                    try { Output.Add(((index == null) ? i : index[i]).ToString() + LineSpacer[((index == null) ? i : index[i]).ToString().Length..(SpacerMax)] + "| " + input[i]); }
+                    catch (ArgumentOutOfRangeException ex) { Output.Add("SpacerMax too small to show full data, try increasing it."); }
+
                 }
-                Console.WriteLine(EndSpacer + "-------");
+                Output.Add(EndSpacer + "-------");
             }
+            if (write)
+            {
+                foreach (var line in Output)
+                {
+                    Console.WriteLine(line);
+                }
+            }
+            return Output.ToArray();
         }
-        public static void Print(int[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print(int[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
         }
-        public static void Print(double[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print(double[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
         }
-        public static void Print(float[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print(float[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
         }
-        public static void Print(Object[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print(Object[] input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Select(i => i.ToString()).ToArray(), index, Name, SpacerMax);
         }
-        public static void Print(List<Object[]> input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print(List<Object[]> input, int[]? index = null, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Select(i => ConsoleTools.ToString(i)).ToArray(), index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Select(i => ConsoleTools.ToString(i)).ToArray(), index, Name, SpacerMax);
         }
-        public static void Print((int[] Index, Object[] Data) input, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print((int[] Index, Object[] Data) input, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Data, input.Index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Data, input.Index, Name, SpacerMax);
         }
-        public static void Print((int[] Index, int[] Data) input, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print((int[] Index, int[] Data) input, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Data, input.Index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Data, input.Index, Name, SpacerMax);
         }
-        public static void Print((int[] Index, String[] Data) input, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print((int[] Index, String[] Data) input, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Data, input.Index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Data, input.Index, Name, SpacerMax);
         }
-        public static void Print((int[] Index, List<Object[]> Data) input, string Name = "Array: ", int SpacerMax = 2)
+        public static String[] Print((int[] Index, List<Object[]> Data) input, string Name = "Array: ", int SpacerMax = 2)
         {
-            ConsoleTools.Print(input.Data.Select(i => ConsoleTools.ToString(i)).ToArray(), input.Index, Name, SpacerMax);
+            return ConsoleTools.Print(input.Data.Select(i => ConsoleTools.ToString(i)).ToArray(), input.Index, Name, SpacerMax);
         }
 
 
@@ -194,7 +203,7 @@ namespace Tools
         public String[] Indices;
         public Dictionary<String, String[]> Data = new Dictionary<string, String[]>();
         public int Count;
-        public LoadCSVFromFile(String fname, String IndexSeperator=", ", String DataSeperator=", ", params String[] CustomIndices)
+        public LoadCSVFromFile(String fname, String IndexSeperator=", ", String DataSeperator=" ", params String[] CustomIndices)
         {
             String[] FileData = File.ReadLines(fname).ToArray();
             if (FileData.Contains("EOF")) { FileData = FileData[0..Array.IndexOf(FileData, "EOF")]; }

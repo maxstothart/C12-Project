@@ -1,5 +1,4 @@
-﻿using NAudio.MediaFoundation;
-using Tools;
+﻿using Tools;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
 

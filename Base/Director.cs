@@ -1,5 +1,4 @@
-﻿using ILGPU.IR.Values;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Tools;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
@@ -16,12 +15,13 @@ namespace Base
         public void LoadData(String fname) { TD = TrainingData.fromFile(fname); OldData = TD; }
         public void FattenData(float deviation, int count) { TD = OldData; TD.PermutateFill(deviation, count); }
 
+        public record ProcessResult(float[][] WeightedSums, float[][] PreActivationValues, float[] Outputs);
         public int TrainBackProp(int MaxIterations, float LearnRate)
         {
             for (int i = 0; i < MaxIterations; i++)
             {
                 var point = TD.getPoint();
-                float[] NetOut = N.Process(point[N.Structure[0]]);
+                float[] NetOut = N.ProcessOutput(point[N.Structure[0]]);
                 var Error = new float[N.Structure[^1]];
 
                 List<float[]> UnitError = new();
@@ -41,7 +41,7 @@ namespace Base
         }
         public record NetworkResult(Network N, float Cost);
         public record MutateParameters(float Deviation, int Breadth, int WBRatio);
-        public int TrainEv2(int CountPerThread, int Threads, int Epochs, int IterationsPerEpoch, MutateParameters MPar)
+        public int TrainEv2(int CountPerThread, int Threads, int Epochs, int IterationsPerEpoch, MutateParameters MPar, Network.PCParams CostParams)
         {
 
 
@@ -50,7 +50,7 @@ namespace Base
             ///Scale the replacement based on the cost of the best network in the island
             ///
             //Initialise Networks
-            var Networks = new (Network, float Cost)[CountPerThread, Threads];
+            var Networks = new (Network N, float Cost)[CountPerThread, Threads];
             for (int i = 0; i < CountPerThread; i++)
             {
                 for (int j = 0; j < Threads; j++)
@@ -66,12 +66,12 @@ namespace Base
                 {
                     for (int i = 0; i < IttPerEpPerThread; i++) 
                     {
-                        int CurrIndex = Rand.Next(ConcurrentCount);
-                        Networks[CurrIndex].N.Mutate(MPar.Deviation, MPar.Breadth, MPar.WBRatio);
-                        Networks[CurrIndex].Cost
+                        int CurrIndex = Rand.Next(CountPerThread);
+                        Networks[CurrIndex, thread].N.Mutate(MPar.Deviation, MPar.Breadth, MPar.WBRatio);
+                        Networks[CurrIndex, thread].Cost = N.ProcessCost(TD, CostParams);
                     }
                 });
-            }
+            }return 0;
         }
         public int TrainEvolutionary(int concurrentCount, int threads, int ElitePopulation, int EliteDuplication, int EpochsPerMillion, float accuracy = -20f, int maxIT = 10000, int DataDepth = 200, float Deviation = 3f, int breadth = 2, Network.PCParams Par = default, int Verbose = 2, bool shock = false)
         {
@@ -304,7 +304,7 @@ namespace Base
             foreach (var line in TD.Data)
             {
                 float[] Expected = line[TD.inputs..];
-                float[] Recieved = N.Process(line[..TD.inputs]);
+                float[] Recieved = N.ProcessOutput(line[..TD.inputs]);
                 float[] Distance = new float[Expected.Length];
                 bool TPassed = true;
 

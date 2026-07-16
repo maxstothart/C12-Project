@@ -10,6 +10,12 @@ namespace Base
             String DataDir = "/mnt/e/Base/";
             DataDir = "E:\\Base\\";
 
+            if (true)
+            {
+                Director D = new(Network.fromFile(DataDir + "xor.net"));
+                D.N.ShowData();
+            }
+
             if (false)
             {
                 Director D = new(Builder.Build(2, 5, 4, 3, 2));
@@ -17,9 +23,9 @@ namespace Base
                 D.LoadData(TD);
                 D.TrainBackProp(100, 0.1f);
             }
-            if (true)
+            if (false)
             {
-                Director D = new(Builder.Build(6, 8, 8, 4));
+                Director D = new(Builder.Build(6, 10, 8, 4));
                 var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3BAdder.Hdat", ", ", " "), 6);
                 D.LoadData(TD);
 
@@ -29,7 +35,7 @@ namespace Base
                     concurrentCount: 40,
                     threads: 20,
                     ElitePopulation: 8,
-                    EliteDuplication: 20,
+                    EliteDuplication: 3,
                     EpochsPerMillion: 20,
                     accuracy: -25,
                     DataDepth: 80,
@@ -107,13 +113,13 @@ namespace Base
 
                 D.N.toFile(DataDir + "xor.net");
             }
-            if (true)
+            if (false)
             {
                 Director D = new(Builder.Build(3, 6, 4, 1));
                 var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3bitparity.Hdat", ", ", " "), 3);
                 D.LoadData(TD);
 
-                D.FattenData(0.2f, 800);
+                D.FattenData(0.1f, 400);
                 D.TrainEvolutionary(
                     concurrentCount: 20,
                     threads: 20,
@@ -121,7 +127,7 @@ namespace Base
                     EliteDuplication: 2,
                     EpochsPerMillion: 40,
                     accuracy: -25,
-                    DataDepth: 150,
+                    DataDepth: 200,
                     maxIT: 2000000,
                     Deviation: 2f,
                     breadth: 5,
@@ -140,7 +146,7 @@ namespace Base
                 //Console.WriteLine("Worst Accuracy"D.Test(0.3f).Item2);
                 //D.N.ShowData();
 
-                D.TestVerbose(0.3f);
+                D.TestVerbose(0.1f);
                 //D.RoundToNearest(0.1f);
                 //D.N.ShowData();
                 //D.TestVerbose(0.1f);
@@ -149,7 +155,7 @@ namespace Base
                 //D.FattenData(0.3f, 10000);
 
 
-                D.N.toFile(DataDir + "xor.net");
+                D.N.toFile(DataDir + "3BParity.net");
             }
             if (false)
             {

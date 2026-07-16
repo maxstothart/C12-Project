@@ -1,16 +1,5 @@
 ﻿using Base;
-using NAudio.MediaFoundation;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Windows.Forms;
-using Tools;
-using CT = Tools.ConsoleTools;
-using LCSV = Tools.LoadCSVFromFile;
-using OP = Tools.Operations;
+using static Vis.ShowNetwork;
 
 namespace Vis
 {
@@ -21,123 +10,149 @@ class Program
         {
             Application.EnableVisualStyles();
 
+            Console.WriteLine("Enter FileName: ");
+            string fname = Console.ReadLine();
+            if (fname[0] == '_') { fname = "E:\\Base\\"+fname[1..]; }
+            if (fname[^1] == '_') { fname = fname[..^1] + ".net"; }
             // This starts the UI loop and opens the window
-            Application.Run(new ShowNetwork(Network.fromFile("E:\\Base\\xor.net"), 800, 800));
-        }
-    }
-    public class VisualiserForm : Form
-    {
-        private float _x = 50, _y = 50, _speedX = 3, _speedY = 3;
-        private const int DotSize = 15;
-
-        public VisualiserForm()
-        {
-            this.Text = "Dot Visualiser";
-            this.DoubleBuffered = true;
-            this.Size = new Size(400, 400);
-
-            System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer { Interval = 16 };
-            timer.Tick += (s, e) => {
-                _x += _speedX;
-                _y += _speedY;
-
-                if (_x < 0 || _x > ClientSize.Width - DotSize) _speedX *= -1;
-                if (_y < 0 || _y > ClientSize.Height - DotSize) _speedY *= -1;
-
-                this.Invalidate();
-            };
-            timer.Start();
-        }
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            e.Graphics.FillEllipse(Brushes.Red, _x, _y, DotSize, DotSize);
+            Application.Run(new ShowNetwork(Network.fromFile(fname), new DrawArgs(60f, .4f, 0.0015f)));
         }
     }
     public class ShowNetwork : Form
     {
         private Network N;
+        private PictureBox NetworkDiagram;
+        private Panel ScrollView;
+        private PictureBox ScrollCanvas;
+        private Splitter PanelResizer;
         private List<(float, float, int)> NodeCoordinates = new();
-        public ShowNetwork(Network _N, int WindowHeight = 400, int WindowWidth = 400)
+        private DrawArgs InputArgs;
+        private float DotSize;
+
+        
+
+        public ShowNetwork(Network _N, DrawArgs D, int WindowWidth = 400, int WindowHeight = 800)
         {
+            InputArgs = D;
+            ScrollView = new Panel();
+            ScrollView.Dock = DockStyle.Bottom;
+            ScrollView.AutoScroll = true;
+            
+            
+            ScrollCanvas = new PictureBox();
+            ScrollCanvas.Location = new Point(0, 0);
+            ScrollCanvas.Size = new Size(WindowWidth, WindowHeight);
+
+            ScrollCanvas.Paint += new(TextPaint);
+            ScrollView.Controls.Add(ScrollCanvas);
+            this.Controls.Add(ScrollView);
+
+            PanelResizer = new Splitter();
+            PanelResizer.Dock = DockStyle.Bottom;
+            PanelResizer.Height = 5; // Thickness of the draggable handle
+            PanelResizer.BackColor = Color.DarkGray;
+            PanelResizer.SplitterMoved += new((s,e) => NetworkDiagram.Refresh());
+
+            NetworkDiagram = new PictureBox();
+            NetworkDiagram.Location = new Point(0, 0);
+            NetworkDiagram.Size = new Size(WindowWidth, WindowHeight/4*3); // Define your total layout space here
+            NetworkDiagram.Dock = DockStyle.Fill; // Fills everything left over
+            NetworkDiagram.Paint += new(PaintTop);
+
+            this.Controls.Add(NetworkDiagram);     // Added last, fills remaining space
+            this.Controls.Add(PanelResizer);   // Added second, sits directly above the panel
+            this.Controls.Add(ScrollView); // Added first, locks to the absolute bottom
+
+            this.Resize += (s, e) => { NetworkDiagram.Refresh(); ScrollCanvas.Refresh(); }; // Refresh on resize
             N = _N;
-            this.Size = new Size(WindowHeight, WindowWidth);
+            this.Size = new Size(WindowWidth, WindowHeight/2);
             this.DoubleBuffered = true;
-
-            System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer { Interval = 500 };
-            timer.Tick += (s, e) =>
-            {
-
-            };
         }
-        protected override void OnPaint(PaintEventArgs e)
+
+        private void TextPaint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            float StepSize = 80;
+            int Pos = 0;
+            float XPos = 10;
+            for (int i = 1; i < N.Structure.Length; i++)
+            {
+                int PCount = N.Structure[i - 1] * N.Structure[i];
+                g.DrawString("Weights: \n" + string.Join("\n", N.Weights[Pos..(Pos + PCount)]), new Font("Arial", 10), Brushes.Black, new PointF(XPos, 10));
+                Pos += PCount;
+                XPos += StepSize;
+            }
+            
+            g.DrawString("Biases: \n" + string.Join("\n", N.Biases), new Font("Arial", 10), Brushes.Black, new PointF(XPos, 10));
+        }
+        private void PaintTop(object sender, PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            drawNetwork(e, N.Structure, (.1f, .3f), (0f, .8f), 0.005f);
+            drawNetworkBetter(e, N, InputArgs);
         }
 
         public static void drawNode(PaintEventArgs e, Brush color, float xAsDecimal, float yAsDecimal, float DotSize)
         {
-            float dotX = (e.ClipRectangle.Width * xAsDecimal) - (e.ClipRectangle.Width * DotSize) / 2;
-            float dotY = (e.ClipRectangle.Height * yAsDecimal) - (e.ClipRectangle.Width * DotSize) / 2;
+            float dotX = (e.ClipRectangle.Width * xAsDecimal) - (e.ClipRectangle.Height * DotSize) / 2;
+            float dotY = (e.ClipRectangle.Height * yAsDecimal) - (e.ClipRectangle.Height * DotSize) / 2;
 
-            e.Graphics.FillEllipse(color, dotX, dotY, (e.ClipRectangle.Width * DotSize), (e.ClipRectangle.Width * DotSize));
+            e.Graphics.FillEllipse(color, dotX, dotY, (e.ClipRectangle.Height * DotSize), (e.ClipRectangle.Height * DotSize));
         }
 
-        public static void drawLine(PaintEventArgs e, float xOrigin, float yOrigin, float xTarget, float yTarget, float Thickness = 0.02f, int color = 1)
+        public static void drawLine(PaintEventArgs e, float xOrigin, float yOrigin, float xTarget, float yTarget, float LineThickness = 0.02f, int color = 1)
         {
+            if (LineThickness <= 0) { return; }
             (float X, float Y) = (e.ClipRectangle.Width * xOrigin, e.ClipRectangle.Height * yOrigin);
             (float X2, float Y2) = (e.ClipRectangle.Width * xTarget, e.ClipRectangle.Height * yTarget);
-            float LineThickness = (e.ClipRectangle.Width * Thickness);
             Brush Colour = new Brush[6] { Brushes.Red, Brushes.Green, Brushes.Blue, Brushes.Orange, Brushes.Yellow, Brushes.Brown } [color % 6];
 
-            e.Graphics.DrawLine(new Pen(Colour, LineThickness), X, Y, X2, Y2);
+            e.Graphics.DrawLine(new Pen(Colour, LineThickness * e.ClipRectangle.Height), X, Y, X2, Y2);
         }
 
-        public void drawNetwork(PaintEventArgs e, int[] structure, (float, float) Padding, (float, float) SpacingRatio, float lineThickness= 0.02f)
+        public record DrawArgs(float NodeSize, float XRatio, float WeightScalar);
+        public void drawNetworkBetter(PaintEventArgs e, Base.Network N, DrawArgs D)
         {
             Brush color = Brushes.Black;
+            (float x, float y) Padding = (0, 0);
+            (float, float) windowSize = (1f - Padding.x * 2, 1f - Padding.y * 2);
+            float xSpacing = windowSize.Item1 / (N.Structure.Length + 1);
+            float xAsDecimal = Padding.x + xSpacing;
+            //xSpacing = xAsDecimal * 2 * (1f - D.XRatio);
 
-            (float, float) windowSize = (1f - Padding.Item1 * 2, 1f - Padding.Item2 * 2);
-            float nodeSize = (windowSize.Item2 / Sort.Max(structure)) * SpacingRatio.Item2;
-            float xAsDecimal = (windowSize.Item1 / (structure.Length + 1)) / 2;
-            float xSpacing = xAsDecimal * 2 *(1f - SpacingRatio.Item1);
 
-            for (int i = 0; i < structure.Length; i++)
+            int p = 0;
+            for (int i = 0; i < N.Structure.Length; i++)
             {
-                xAsDecimal += xSpacing;
-                float yAsDecimal = Padding.Item2 + windowSize.Item2 / (structure[i] + 1);
+                
+                float yAsDecimal = Padding.y + windowSize.Item2 / (N.Structure[i] + 1);
 
-                for (int j  = 0; j < structure[i]; j++)
+                for (int j = 0; j < N.Structure[i]; j++)
                 {
                     NodeCoordinates.Add((xAsDecimal, yAsDecimal, i));
-                    drawNode(e, color, xAsDecimal, yAsDecimal, windowSize.Item2 * nodeSize);
-                    yAsDecimal += windowSize.Item2 / (structure[i] + 1);
+                    yAsDecimal += windowSize.Item2 / (N.Structure[i] + 1);
+                    p++;
+                }
+                xAsDecimal += xSpacing;
+            }
+            p = 0;
+            for (int i = 0; i < N.Structure.Length - 1; i++)
+            {
+                for (int j = 0; j < N.Structure[i]; j++)
+                {
+                    for (int k = 0; k < N.Structure[i + 1]; k++)
+                    {
+                        (float, float, int) origin = NodeCoordinates[NodeCoordinates.FindIndex(n => n.Item3 == i && n.Item2 == NodeCoordinates.FindAll(n2 => n2.Item3 == i)[j].Item2)];
+                        (float, float, int) target = NodeCoordinates[NodeCoordinates.FindIndex(n => n.Item3 == i + 1 && n.Item2 == NodeCoordinates.FindAll(n2 => n2.Item3 == i + 1)[k].Item2)];
+
+                        drawLine(e, origin.Item1, origin.Item2, target.Item1, target.Item2, (float.Abs(N.Weights[p]) * D.WeightScalar), origin.Item3);
+                        p++;
+                    }
                 }
             }
-
-            int start = 0; int next = 0;
-            if (lineThickness > 0) {
-                for (int i = 0; i < structure.Length; i++)
-                {
-                    next += structure[i];
-                    if (structure.Length > i + 1)
-                    {
-                        for (int j = 0; j < structure[i + 1]; j++)
-                        {
-                            (float, float, int) target = NodeCoordinates[next + j];
-                            for (int k = 0; k < structure[i]; k++)
-                            {
-                                (float, float, int) origin = NodeCoordinates[start + k];
-                                drawLine(e, origin.Item1, origin.Item2, target.Item1, target.Item2, lineThickness, origin.Item3);
-                            }
-                        }
-                    }
-                    start += structure[i];
-                } 
+            foreach ((float, float, int) node in NodeCoordinates)
+            {
+                drawNode(e, color, node.Item1, node.Item2, D.NodeSize * .001f);
             }
-
-            for (int i = 0; i < NodeCoordinates.Count; i++) { drawNode(e, color, NodeCoordinates[i].Item1, NodeCoordinates[i].Item2, windowSize.Item2 * nodeSize); }
         }
 
         public static void showWindowSize(PaintEventArgs e) { showWindowSize(e, (0f, 0f)); }

@@ -86,15 +86,21 @@ namespace Base
             return (x > 0) ? x : x * negativeWeight;
         }
 
+        public static float ELU(float x)
+        {
+            float alpha = 1.0f; // You can adjust this parameter as needed
+            return (x >= 0) ? x : alpha * (float)(Math.Exp(x) - 1);
+        }
 
-        public float[] ProcessFull(params float[] inputs)
+        public record NodeValue(float ActivationValue, float WeightedSum, float Weight);
+        public NodeValue[] Process(params float[] inputs)
         {
             float[] Data = new float[Biases.Length];
             Array.Copy(inputs, Data, inputs.Length);
             int currIndex = inputs.Length;
             int POffset = 0;
             int COffset = inputs.Length;
-
+            NodeValue[] OutputValues = new NodeValue[Biases.Length];
             for (int Layer = 1; Layer < Structure.Length; Layer++)
             {
                 for (int NodeInLayer = 0; NodeInLayer < Structure[Layer]; NodeInLayer++)
@@ -105,18 +111,18 @@ namespace Base
                         sum = MathF.FusedMultiplyAdd(Data[POffset + NodeInPrevLayer], Weights[currIndex], sum);
                         currIndex++;
                     }
-                    if (Layer + 1 == Structure.Length) { Data[COffset + NodeInLayer] = ATO(sum); }
-                    else { Data[COffset + NodeInLayer] = OutputATO(sum); }
-
+                    if (Layer + 1 == Structure.Length) { Data[COffset + NodeInLayer] = OutputATO(sum); }
+                    else { Data[COffset + NodeInLayer] = ATO(sum); }
+                    OutputValues[COffset + NodeInLayer] = new NodeValue(Data[COffset + NodeInLayer], sum, Weights[currIndex - Structure[Layer - 1]]);
                 }
                 POffset = COffset;
                 COffset += Structure[Layer];
             }
-            return Data;
+            return OutputValues;
         }
-        public float[] Process(params float[] inputs)
+        public float[] ProcessOutput(params float[] inputs)
         {
-            return ProcessFull(inputs)[^Structure[^1]..];
+            return Process(inputs)[^Structure[^1]..].Select(a => a.ActivationValue).ToArray();
         }
         public struct PCParams()
         {
@@ -140,7 +146,7 @@ namespace Base
             {
                 var inputs = point[..TD.inputs];
                 var Expected = point[TD.inputs..];
-                var Recieved = Process(inputs);
+                var Recieved = ProcessOutput(inputs);
 
                 float PC = 0;
                 for (int i = 0; i < Expected.Length; i++)

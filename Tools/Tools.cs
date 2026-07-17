@@ -1,13 +1,7 @@
-﻿using System.Linq.Expressions;
-using System.Numerics;
-using System.Xml;
+﻿using System.Numerics;
 
 namespace Tools
 {
-    /* Import Modules:
-           using CT = Tools.ConsoleTools;
-           using LCSV = Tools.LoadCSVFromFile; 
-     */
     static public class ConsoleTools
     {
         /*
@@ -382,6 +376,7 @@ namespace Tools
             return Output.ToArray();
         }
         
+        
     }
     public static class Sort
     {
@@ -481,6 +476,14 @@ namespace Tools
 
     public static class Operations
     {
+        public static IEnumerable<T> RemoveRange<T>(IEnumerable<T> range, int Index, int Count)
+        {
+            return range.Take(Index).Concat(range.Skip(Index + Count));
+        }
+        public static IEnumerable<T> RemoveAt<T>(IEnumerable<T> range, int Index)
+        {
+            return range.Take(Index).Concat(range.Skip(Index + 1));
+        }
         public static T BulkAdd<T>(IEnumerable<T> input) where T : INumber<T>
         {
             T val = T.Zero;

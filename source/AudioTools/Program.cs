@@ -7,14 +7,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 
-namespace Audio
+namespace AudioTools
 {
     public class Music
     {
@@ -87,9 +89,9 @@ namespace Audio
         }
         public void Reverse(int StartSample = 0, int? EndSample = null)
         {
-            if (!EndSample.HasValue) { EndSample = AudioData[0].Length-1; }
+            if (!EndSample.HasValue) { EndSample = AudioData[0].Length - 1; }
             Dictionary<int, List<float>> newData = new Dictionary<int, List<float>>();
-            
+
             for (int i = 0; i < AudioData.Count; i++)
             {
                 newData.Add(i, new List<float>());
@@ -111,7 +113,7 @@ namespace Audio
         public Dictionary<int, List<float>> Data;
         public decimal DurationSec;
         public String Duration;
-        public Wav(String fname, int? Length=null)
+        public Wav(String fname, int? Length = null)
         {
             var br = new BinaryReader(File.Open(fname, FileMode.Open));
 
@@ -123,13 +125,13 @@ namespace Audio
                 br.ReadBytes(4);
                 if (Encoding.ASCII.GetString(br.ReadBytes(4)) == "WAVE")
                 {
-                    while (true) 
+                    while (true)
                     {
-                        if (br.BaseStream.Length < br.BaseStream.Position+8) { break; }
+                        if (br.BaseStream.Length < br.BaseStream.Position + 8) { break; }
 
                         String CID = new String(br.ReadChars(4));
                         uint CSize = br.ReadUInt32();
-                        Console.WriteLine(CID+", "+CSize);
+                        Console.WriteLine(CID + ", " + CSize);
                         Chunks.Add(CID, br.ReadBytes(((int)CSize)));
                     }
                 }
@@ -152,11 +154,12 @@ namespace Audio
             {
                 Data[i] = new List<float>();
             }
-            while (br.BaseStream.Length > br.BaseStream.Position+4)
+            while (br.BaseStream.Length > br.BaseStream.Position + 4)
             {
-                if (Length != null && Length.Value*4*fmt["SampleRate"] <= br.BaseStream.Position) { break; }
+                if (Length != null && Length.Value * 4 * fmt["SampleRate"] <= br.BaseStream.Position) { break; }
 
-                switch (fmt["BPS"]) {
+                switch (fmt["BPS"])
+                {
                     case 16:
                         for (int i = 0; i < fmt["NumChannels"]; i++)
                         {
@@ -180,7 +183,7 @@ namespace Audio
                 }
             }
 
-            DurationSec = Data[0].Count*2 / (decimal)fmt["SampleRate"];
+            DurationSec = Data[0].Count * 2 / (decimal)fmt["SampleRate"];
             Duration = TimeSpan.FromSeconds((double)DurationSec).ToString(@"mm\:ss\.fff");
         }
         public void generateHeader(Stream File, int filesize)
@@ -202,7 +205,7 @@ namespace Audio
             bw.Write((Int16)fmt["BPS"]);
         }
 
-            
+
     }
     public class Player
     {
@@ -225,7 +228,7 @@ namespace Audio
             outputDevice.Init(Data);
             Console.WriteLine("Playing File");
             outputDevice.Play();
-            
+
             // Wait for it to finish
             while (outputDevice.PlaybackState == PlaybackState.Playing)
             {
@@ -233,12 +236,12 @@ namespace Audio
             }
             Console.WriteLine("Finished File");
         }
-        
+
         public RawSourceWaveStream ToStream(float[] Data, int SampleRate, int Channels = 2)
         {
             byte[] byteBuffer = new byte[Data.Length * 4];
             Buffer.BlockCopy(Data, 0, byteBuffer, 0, byteBuffer.Length);
-            return new RawSourceWaveStream(new MemoryStream(byteBuffer), WaveFormat.CreateIeeeFloatWaveFormat(SampleRate, Channels));  
+            return new RawSourceWaveStream(new MemoryStream(byteBuffer), WaveFormat.CreateIeeeFloatWaveFormat(SampleRate, Channels));
         }
         public RawSourceWaveStream ToStream(Dictionary<int, float[]> Data, int SampleRate)
         {

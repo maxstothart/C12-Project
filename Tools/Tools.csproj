@@ -8,9 +8,6 @@
     <Platforms>AnyCPU;ARM64;x64</Platforms>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
-  </ItemGroup>
+  
 
 </Project>

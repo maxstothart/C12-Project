@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
 	<UseWindowsForms>true</UseWindowsForms>
     <TargetFramework>net9.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -14,8 +14,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ini-parser-netstandard" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Tools\Tools.csproj" />
 	<ProjectReference Include="..\Base\Base.csproj" />
   </ItemGroup>
+
+	<ItemGroup>
+		<None Update="config.ini">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 </Project>

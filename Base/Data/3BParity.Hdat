@@ -1,4 +1,4 @@
-﻿#Bit1, Bit2, Bit3, ParityBit
+﻿#IBit1, IBit2, IBit3, ParityBit
 0 0 0 0
 0 0 1 1
 0 1 0 1

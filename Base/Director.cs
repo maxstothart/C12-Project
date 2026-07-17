@@ -6,12 +6,18 @@ using OP = Tools.Operations;
 
 namespace Base
 {
-    public class Director(Network _N)
+    public class Director
     {
-        public Network N = _N;
+        public Network N;
         public TrainingData TD;
         public TrainingData OldData;
         private Random Rand = new();
+        public Director(Network _N)
+        {
+            N = _N;
+        }
+        public Director() { }
+        
         public void LoadData(TrainingData _TD) { TD = _TD; OldData = _TD; }
         public void LoadData(String fname) { TD = TrainingData.fromFile(fname); OldData = TD; }
         public void FattenData(float deviation, int count) { TD = OldData; TD.PermutateFill(deviation, count); }
@@ -249,55 +255,7 @@ namespace Base
             return output;
         }
 
-        //public NetworkResult[] getBest(NetworkResult[] input, int length, int subset = 1, int subsetEnd = 1, bool recheck = false, Func<Network, float>? CostFunction = null)
-        //{
-        //    var T = Stopwatch.StartNew();
-        //    int remainingCount = length - subsetEnd;
-        //    int requiredBest = subset + remainingCount;
-        //
-        //    (float, int)[] LowestCost = new (float, int)[length];
-        //    //(float, int)[] LowestCost = new (float, int)[subset];
-        //    for (int i = 0; i < LowestCost.Length; i++)
-        //    {
-        //        LowestCost[i] = (float.PositiveInfinity, 0);
-        //    }
-        //
-        //    for (int i = 0; i < input.Length; i++)
-        //    {
-        //        float trueCost = input[i].Item1;
-        //        if (recheck) trueCost = CostFunction(input[i].Item2);
-        //
-        //        for (int j = 0; j < LowestCost.Length; j++)
-        //        {
-        //            if (trueCost < LowestCost[j].Item1)
-        //            {
-        //                // Shift worse results down
-        //                for (int k = LowestCost.Length - 1; k > j; k--)
-        //                {
-        //                    LowestCost[k] = LowestCost[k - 1];
-        //                }
-        //
-        //                LowestCost[j] = (trueCost, i);
-        //                break;
-        //            }
-        //        }
-        //    }
-        //    //Console.WriteLine(LowestCost.Count());
-        //    List<NetworkResult> output = new();
-        //    for (int i = 0; i < subsetEnd; i++)
-        //    {
-        //            output.Add(input[LowestCost[i%subset].Item2]);
-        //    }
-        //    int remaining = length - output.Count;
-        //    for (int i = 0; i < length - subsetEnd; i++)
-        //    {
-        //        output.Add(input[LowestCost[(subset + i)].Item2]);
-        //    }
-        //    T.Stop();
-        //    //Console.WriteLine(T.Elapsed);
-        //    return output.ToArray();
-        //}
-        public (bool Pass, float Accuracy, List<(float[], float[], float[], bool)> DataPoints) Test(float passAccuracy = 0.001f)
+        public (bool Pass, float Accuracy, List<(float[] Expected, float[] Recieved, float[] Distance, bool Passed)> DataPoints) Test(float passAccuracy = 0.001f)
         {
             List<(float[], float[], float[], bool)> Output = new();
             bool NPassed = true;

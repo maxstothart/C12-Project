@@ -8,7 +8,7 @@ namespace Base
         static void Main(string[] args)
         {
             String DataDir = "/mnt/e/Base/";
-            DataDir = "E:\\Base\\";
+            DataDir = "E:\\Base\\Data\\";
 
             if (false)
             {
@@ -19,14 +19,14 @@ namespace Base
             if (false)
             {
                 Director D = new(Builder.Build(2, 5, 4, 3, 2));
-                var TD = TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", DataSeperator: " "), 2);
+                var TD = TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", DataSeperator: " "));
                 D.LoadData(TD);
                 D.TrainBackProp(100, 0.1f);
             }
             if (false)
             {
                 Director D = new(Builder.Build(6, 10, 8, 4));
-                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3BAdder.Hdat", ", ", " "), 6);
+                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3BAdder.Hdat", ", ", " "));
                 D.LoadData(TD);
 
                 D.FattenData(0.0001f, 300);
@@ -71,7 +71,7 @@ namespace Base
             if (false)
             {
                 Director D = new(Builder.Build(8, 16, 8, 5));
-                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "4badder.Hdat", ",", ","), 8);
+                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "4badder.Hdat", ",", ","));
                 D.LoadData(TD);
 
                 D.FattenData(0.0001f, 300);
@@ -117,7 +117,7 @@ namespace Base
             {
                 //Director D = new(Builder.Build(3, 6, 4, 1));
                 Director D = new(Network.fromFile(DataDir + "3BParity.net"));
-                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3bitparity.Hdat", ", ", " "), 3);
+                var TD = TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "3bitparity.Hdat", ", ", " "));
                 D.LoadData(TD);
 
                 D.FattenData(0.3f, 400);
@@ -143,7 +143,7 @@ namespace Base
                     },
                     Verbose: 0,
                     shock: false
-                ); 
+                );
                 D.TestVerbose(0.1f, (0.3f, 1200), true);
                 //D.RoundToNearest(0.1f);
                 //D.N.ShowData();
@@ -159,8 +159,8 @@ namespace Base
             {
                 Director D = new(Builder.Build(2, 4, 4, 2));
                 //Director D = new(Network.fromFile(DataDir + "xor.net"));
-                //D.LoadData(TrainingData.fromLCSV(new Tools.LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " "), 2));
-                D.LoadData(TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " "), 2));
+                D.LoadData(TrainingData.fromLCSV(new LoadCSVFromFile(DataDir + "xor.Hdat", ", ", " ")));
+
 
                 D.FattenData(0.3f, 800);
                 D.TrainEvolutionary(
@@ -186,18 +186,15 @@ namespace Base
                     Verbose: 0,
                     shock: false
                 );
-                //D.N.ShowData();
 
-                //D.TestVerbose(0.1f);
-                //D.RoundToNearest(1f);
-                //D.N.ShowData();
-                D.TestVerbose(0.4f);
 
+                //Compare(D, 2, 0, "xor", D => D.N.removeNode(2,0));
+                Compare(D, 2, 0, "xor", D => D.N.AddNode(2));
                 //D.LoadData(TrainingData.fromFile(DataDir + "xor.dat"));
                 //D.FattenData(0.3f, 10000);
 
 
-                D.N.toFile(DataDir + "xor.net");
+
             }
             if (false)
             {
@@ -241,7 +238,22 @@ namespace Base
                 D.N.ShowData();
                 Director D2 = new Director(Network.fromFile(DataDir + "xor.net"));
                 D2.N.ShowData();
-            }            
-        }        
+            }
+            void Compare(Director D, int Layer, int Node, string NetName, Action<Director> Payload)
+            {
+                ProcessStartInfo PSI = new(
+                    fileName: "E:\\Vis\\bin\\Release\\net9.0-windows\\Vis.exe",
+                    arguments: $"{DataDir + NetName + ".Hdat"} {DataDir + NetName + ".net"}"
+                );
+                D.N.toFile(DataDir + $"{NetName}.net");
+                var Viewer = Process.Start(PSI);
+                //Viewer.WaitForExit();
+                Payload(D);
+                D.N.toFile(DataDir + $"{NetName}2.net");
+                PSI.Arguments = $"{DataDir + NetName + ".Hdat"} {DataDir + NetName + "2.net"}";
+                Process.Start(PSI);
+            }
+        }
+        
     }
 }

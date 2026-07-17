@@ -1,5 +1,4 @@
-﻿using NAudio.Codecs;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Serialization;
@@ -20,7 +19,7 @@ namespace Base
         public Func<float, float> ATO = a => Sigmoid(a);// Sigmoid(a);// ReLU(a);
         public Func<float, float> OutputATO = a => Sigmoid(a);
         public int ID = 0;
-        public void Add(int Layer, float[]? NewWeights=null, float Bias=0)
+        public void AddNode(int Layer, float[]? NewWeights=null, float Bias=0)
         {
             int NodeID = OP.BulkAdd(Structure[..Layer]) + Structure[Layer];
             int IndexKey = Array.IndexOf(Index, NodeID);
@@ -31,7 +30,7 @@ namespace Base
                 NewWeights = new float[Structure[Layer - 1]];
                 for (int i = 0; i < NewWeights.Length; i++)
                 {
-                    NewWeights[i] = 1;
+                    NewWeights[i] = 0;
                 }
             }
 
@@ -43,10 +42,6 @@ namespace Base
             Index = OP.Insert(Index, IndexKey, NIndex).ToArray();
             Weights = OP.Insert(Weights, IndexKey, NewWeights).ToArray();
             Biases = OP.Insert(Biases, NodeID, Bias);
-
-            //Index = Index[..IndexKey].Concat(NIndex.Concat(Index[IndexKey..])).ToArray();
-            //Weights = Weights[..IndexKey].Concat(NewWeights.Concat(Weights[IndexKey..])).ToArray();
-            //Biases = Biases[..NodeID].Concat(new float[] { Bias }.Concat(Biases[NodeID..])).ToArray();
 
             // Advance Forward values
             for (int i = IndexKey + NewWeights.Length; i < Index.Length; i++)
@@ -66,6 +61,40 @@ namespace Base
                 }
             }
 
+        }
+        public void removeNode(int Layer, int NodeInLayer)
+        {
+            int NodeID = OP.BulkAdd(Structure[..Layer]) + NodeInLayer;
+            int IndexKey = Array.IndexOf(Index, NodeID);
+            if (IndexKey == -1) { return; }
+            // Remove Weights and Indexes
+            int WeightCount = Structure[Layer - 1];
+            Index = OP.RemoveRange(Index, IndexKey, WeightCount).ToArray();
+            Weights = OP.RemoveRange(Weights, IndexKey, WeightCount).ToArray();
+            Biases = OP.RemoveAt(Biases, NodeID).ToArray();
+            // Advance Forward values
+            for (int i = IndexKey; i < Index.Length; i++)
+            {
+                if (Index[i] > NodeID)
+                {
+                    Index[i] -= 1;
+                }
+            }
+            Structure[Layer] -= 1;
+            // Remove Forward Weights
+            if (Layer + 1 < Structure.Length)
+            {
+                for (int i = 0; i < Structure[Layer + 1]; i++)
+                {
+                    int ForwardNodeID = OP.BulkAdd(Structure[..(Layer + 1)]) + i;
+                    int ForwardIndexKey = Array.IndexOf(Index, ForwardNodeID);
+                    if (ForwardIndexKey != -1)
+                    {
+                        Index = OP.RemoveAt(Index, ForwardIndexKey).ToArray();
+                        Weights = OP.RemoveAt(Weights, ForwardIndexKey).ToArray();
+                    }
+                }
+            }
         }
 
         public static float Sigmoid(float x)

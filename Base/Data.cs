@@ -1,4 +1,4 @@
-﻿using ILGPU.Runtime.Cuda;
+﻿//using ILGPU.Runtime.Cuda;
 using Tools;
 using CT = Tools.ConsoleTools;
 using OP = Tools.Operations;
@@ -98,11 +98,12 @@ namespace Base
             return Output;
         }
 
-        public static TrainingData fromLCSV(LoadCSVFromFile LCSV, int inputs)
+        public static TrainingData fromLCSV(LoadCSVFromFile LCSV, string inputPrefix = "I")
         {
             var O = new TrainingData();
-            O.inputs = inputs;
-            O.outputs = LCSV.Indices.Length - inputs;
+            O.inputs = 0;
+            LCSV.Indices.Select(x => x.ToLower()).ToList().ForEach(x => { if (x[0..inputPrefix.Length] == inputPrefix.ToLower()) { O.inputs++; } });
+            O.outputs = LCSV.Indices.Length - O.inputs;
             for (int i = 0; i < LCSV.Count; i++)
             {
                 O.Data.Add((LCSV.GetLine(i)).Select(float.Parse).ToArray());

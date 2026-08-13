@@ -25,6 +25,8 @@ namespace Base
         public record ProcessResult(float[][] WeightedSums, float[][] PreActivationValues, float[] Outputs);
         public int TrainBackProp(int MaxIterations, float LearnRate)
         {
+            //Written in Github, not error checked
+            Func<float, float> SigmoidPrime = (a) => MathF.FusedMultiplyAdd(a, -a, a);
             for (int i = 0; i < MaxIterations; i++)
             {
                 var point = TD.getPoint();
